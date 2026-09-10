@@ -5,7 +5,7 @@ const products=[
  {name:"Morango",price:8,img:"imagens/morango1.jpg"},
  {name:"Ninho c/ Nutella",price:8,img:"imagens/ninho1.jpg"},
  {name:"Tablito",price:8,img:"imagens/tablito1.jpg"},
- {name:"Maracujá c/ Nutella",price:7,img:"imagens/maracuja1.jpg"},
+ {name:"Maracujá c/ Nutella",price:8,img:"imagens/maracuja1.jpg"},
  {name:"Paçoca",price:8,img:"imagens/pacoca1.jpg"},
  {name:"Ovomaltine",price:8,img:"imagens/ovomaltine1.jpg"},
  {name:"Abacaxi",price:8,img:"imagens/abacaxi1.jpg"},
