@@ -1,0 +1,226 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>Painel Administrativo | Gela Gourmet</title>
+
+    <link rel="stylesheet" href="admin.css">
+
+    <!-- Supabase -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+</head>
+
+<body>
+
+    <!-- MENU LATERAL -->
+    <aside class="sidebar">
+
+        <div class="logo">
+            <div class="logo-icon">🍓</div>
+
+            <div>
+                <h1>Gela Gourmet</h1>
+                <span>Administração</span>
+            </div>
+        </div>
+
+        <nav>
+            <a href="#" class="menu-item active">
+                <span>📊</span>
+                Painel
+            </a>
+
+            <a href="#produtos" class="menu-item">
+                <span>🍨</span>
+                Produtos
+            </a>
+
+            <a href="#" class="menu-item">
+                <span>📦</span>
+                Pedidos
+            </a>
+
+            <a href="#" class="menu-item">
+                <span>⚙️</span>
+                Configurações
+            </a>
+        </nav>
+
+        <div class="sidebar-bottom">
+            <div class="admin-user">
+                <div class="avatar">A</div>
+
+                <div>
+                    <strong>Administrador</strong>
+                    <small>Painel Gela Gourmet</small>
+                </div>
+            </div>
+
+            <button class="logout">
+                ↪ Sair
+            </button>
+        </div>
+
+    </aside>
+
+
+    <!-- CONTEÚDO PRINCIPAL -->
+    <main class="main">
+
+        <!-- TOPO -->
+        <header class="topbar">
+
+            <div>
+                <h2>Painel Administrativo</h2>
+                <p>Gerencie os produtos da Gela Gourmet</p>
+            </div>
+
+            <div class="top-actions">
+                <span class="status-online">
+                    <span></span>
+                    Sistema online
+                </span>
+            </div>
+
+        </header>
+
+
+        <!-- CARDS DE RESUMO -->
+        <section class="summary">
+
+            <div class="summary-card">
+
+                <div class="summary-icon purple">
+                    🍨
+                </div>
+
+                <div>
+                    <span>Total de produtos</span>
+                    <strong id="totalProdutos">0</strong>
+                </div>
+
+            </div>
+
+
+            <div class="summary-card">
+
+                <div class="summary-icon green">
+                    ✓
+                </div>
+
+                <div>
+                    <span>Disponíveis</span>
+                    <strong id="produtosDisponiveis">0</strong>
+                </div>
+
+            </div>
+
+
+            <div class="summary-card">
+
+                <div class="summary-icon red">
+                    ×
+                </div>
+
+                <div>
+                    <span>Indisponíveis</span>
+                    <strong id="produtosIndisponiveis">0</strong>
+                </div>
+
+            </div>
+
+        </section>
+
+
+        <!-- PRODUTOS -->
+        <section class="products-section" id="produtos">
+
+            <div class="section-header">
+
+                <div>
+                    <h2>Produtos</h2>
+                    <p>Gerencie a disponibilidade e os nomes dos produtos.</p>
+                </div>
+
+                <button class="refresh-button" onclick="carregarProdutos()">
+                    ↻ Atualizar
+                </button>
+
+            </div>
+
+
+            <!-- PRODUTOS SERÃO INSERIDOS AQUI -->
+            <div id="productsGrid" class="products-grid">
+
+                <div class="loading">
+                    Carregando produtos...
+                </div>
+
+            </div>
+
+        </section>
+
+    </main>
+
+
+    <!-- MODAL EDITAR -->
+    <div id="modalEditar" class="modal">
+
+        <div class="modal-box">
+
+            <button class="close-modal" onclick="fecharModal()">
+                ×
+            </button>
+
+            <div class="modal-header">
+                <div class="modal-icon">
+                    ✏️
+                </div>
+
+                <div>
+                    <h2>Editar produto</h2>
+                    <p>Altere o nome do produto.</p>
+                </div>
+            </div>
+
+
+            <div class="form-group">
+
+                <label for="nomeProduto">
+                    Nome do produto
+                </label>
+
+                <input
+                    type="text"
+                    id="nomeProduto"
+                    placeholder="Digite o nome do produto"
+                >
+
+            </div>
+
+
+            <div class="modal-buttons">
+
+                <button class="cancel-button" onclick="fecharModal()">
+                    Cancelar
+                </button>
+
+                <button class="save-button" onclick="salvarNome()">
+                    💾 Salvar
+                </button>
+
+            </div>
+
+        </div>
+
+    </div>
+
+
+    <script src="admin.js"></script>
+
+</body>
+
+</html>
