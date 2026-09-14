@@ -3,83 +3,98 @@ const SUPABASE_URL = "https://aiirehncupywhmftzzmn.supabase.co";
 // Use aqui a sua Publishable Key
 const SUPABASE_KEY = "sb_publishable_6qSFWsLKbBxwYEE_N_yU3A_d-vOpHv9";
 
-const supabaseClient = window.supabase.createClient(
-    SUPABASE_URL,
-    SUPABASE_KEY
-);
+const supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
+// =========================
+// VARIÁVEIS
+// =========================
 
 let produtos = [];
 
 let produtoEditando = null;
 
+// =========================
+// VERIFICAR LOGIN
+// =========================
 
-/* =========================
-   CARREGAR PRODUTOS
-========================= */
+async function verificarLogin() {
+  const { data, error } = await supabaseClient.auth.getUser();
+
+  if (error || !data.user) {
+    console.log("Usuário não está logado.");
+
+    window.location.href = "admin-login.html";
+
+    return false;
+  }
+
+  console.log("Usuário logado:", data.user.email);
+
+  return true;
+}
+
+// =========================
+// CARREGAR PRODUTOS
+// =========================
 
 async function carregarProdutos() {
+  const grid = document.getElementById("productsGrid");
 
-    const grid = document.getElementById("productsGrid");
-
-    grid.innerHTML = `
+  grid.innerHTML = `
         <div class="loading">
             Carregando produtos...
         </div>
     `;
 
-    const { data, error } = await supabaseClient
-        .from("produtos")
-        .select("*")
-        .order("id");
+  const { data, error } = await supabaseClient
+    .from("produtos")
+    .select("*")
+    .order("id");
 
-    if (error) {
+  console.log("DADOS DO SUPABASE:", data);
 
-        console.error(error);
+  console.log("ERRO DO SUPABASE:", error);
 
-        grid.innerHTML = `
+  if (error) {
+    grid.innerHTML = `
             <div class="loading">
-                ❌ Erro ao carregar os produtos.
+                ❌ Erro ao carregar produtos:<br>
+                ${error.message}
             </div>
         `;
 
-        return;
-    }
+    return;
+  }
 
-    produtos = data;
+  produtos = data || [];
 
-    atualizarResumo();
+  atualizarResumo();
 
-    mostrarProdutos();
+  mostrarProdutos();
 }
 
-
-/* =========================
-   MOSTRAR PRODUTOS
-========================= */
+// =========================
+// MOSTRAR PRODUTOS
+// =========================
 
 function mostrarProdutos() {
+  const grid = document.getElementById("productsGrid");
 
-    const grid = document.getElementById("productsGrid");
-
-    if (produtos.length === 0) {
-
-        grid.innerHTML = `
+  if (produtos.length === 0) {
+    grid.innerHTML = `
             <div class="loading">
                 Nenhum produto cadastrado.
             </div>
         `;
 
-        return;
-    }
+    return;
+  }
 
+  grid.innerHTML = produtos
+    .map((produto) => {
+      const disponivel = produto.disponivel;
 
-    grid.innerHTML = produtos.map(produto => {
-
-        const disponivel = produto.disponivel;
-
-
-        return `
+      return `
             <article class="product-card">
 
                 <img
@@ -88,18 +103,22 @@ function mostrarProdutos() {
                     class="product-image"
                 >
 
+
                 <div class="product-info">
 
                     <h3 class="product-name">
                         ${produto.nome}
                     </h3>
 
+
                     <div class="product-price">
                         R$ ${Number(produto.preco).toFixed(2).replace(".", ",")}
                     </div>
 
 
-                    <div class="product-status ${disponivel ? "available" : "unavailable"}">
+                    <div class="product-status ${
+                      disponivel ? "available" : "unavailable"
+                    }">
 
                         ${disponivel ? "● Disponível" : "● Indisponível"}
 
@@ -108,62 +127,112 @@ function mostrarProdutos() {
 
                     <div class="product-actions">
 
-                        <button
-                            class="edit-button"
-                            onclick="abrirEdicao(${produto.id})"
-                        >
-                            ✏️ Editar
-                        </button>
+    <button
+        class="edit-button"
+        onclick="abrirEdicao(${produto.id})"
+    >
+        ✏️ Editar
+    </button>
 
+    <button
+        class="toggle-button ${disponivel ? "available" : "unavailable"}"
+        onclick="alternarDisponibilidade(${produto.id})"
+    >
+        ${disponivel ? "🔴 Desativar" : "🟢 Ativar"}
+    </button>
 
-                        <button
-                            class="toggle-button ${disponivel ? "available" : "unavailable"}"
-                            onclick="alternarDisponibilidade(${produto.id})"
-                        >
+    <button
+        class="delete-button"
+        onclick="excluirProduto(${produto.id})"
+    >
+        🗑️ Excluir
+    </button>
 
-                            ${disponivel ? "🔴 Desativar" : "🟢 Ativar"}
-
-                        </button>
-
-                    </div>
+</div>
 
                 </div>
 
             </article>
         `;
-
-    }).join("");
+    })
+    .join("");
 }
 
-
-/* =========================
-   RESUMO
-========================= */
+// =========================
+// ATUALIZAR RESUMO
+// =========================
 
 function atualizarResumo() {
+  const total = produtos.length;
 
-    const total = produtos.length;
+  const disponiveis = produtos.filter(
+    (produto) => produto.disponivel === true,
+  ).length;
 
-    const disponiveis = produtos.filter(
-        produto => produto.disponivel === true
-    ).length;
+  const indisponiveis = total - disponiveis;
 
-    const indisponiveis = total - disponiveis;
+  document.getElementById("totalProdutos").textContent = total;
 
+  document.getElementById("produtosDisponiveis").textContent = disponiveis;
 
-    document.getElementById("totalProdutos").textContent = total;
-
-    document.getElementById("produtosDisponiveis").textContent =
-        disponiveis;
-
-    document.getElementById("produtosIndisponiveis").textContent =
-        indisponiveis;
+  document.getElementById("produtosIndisponiveis").textContent = indisponiveis;
 }
 
+// =========================
+// ABRIR CRIAÇÃO
+// =========================
 
-/* =========================
-   ABRIR EDIÇÃO
-========================= */
+function abrirCriacao() {
+
+    // Indica que NÃO estamos editando
+    produtoEditando = null;
+
+
+    // Limpa os campos
+    document.getElementById("nomeProduto").value = "";
+
+    document.getElementById("precoProduto").value = "";
+
+    document.getElementById("imagemProduto").value = "";
+
+    document.getElementById("disponivelProduto").value = "true";
+
+
+    // Título
+    document.getElementById("tituloModal").textContent =
+        "Novo produto";
+
+
+    // Descrição
+    const descricao =
+        document.querySelector(
+            "#modalProduto .modal-header p"
+        );
+
+    if (descricao) {
+        descricao.textContent =
+            "Preencha os dados do geladinho.";
+    }
+
+
+    // Limpa prévia
+    const preview =
+        document.getElementById("previewImagem");
+
+    if (preview) {
+        preview.innerHTML = "";
+    }
+
+
+    // Abre modal
+    document
+        .getElementById("modalProduto")
+        .classList.add("show");
+}
+
+// =========================
+// ABRIR EDIÇÃO
+// =========================
 
 function abrirEdicao(id) {
 
@@ -174,119 +243,431 @@ function abrirEdicao(id) {
     if (!produto) return;
 
 
+    // Guarda o produto que está sendo editado
     produtoEditando = produto;
 
 
+    // Preenche o nome
     document.getElementById("nomeProduto").value =
         produto.nome;
 
 
-    document.getElementById("modalEditar")
+    // Preenche o preço
+    document.getElementById("precoProduto").value =
+        produto.preco;
+
+
+    // Limpa o campo de arquivo
+    document.getElementById("imagemProduto").value =
+        "";
+
+
+    // Preenche a disponibilidade
+    document.getElementById("disponivelProduto").value =
+        produto.disponivel ? "true" : "false";
+
+
+    // Altera o título
+    document.getElementById("tituloModal").textContent =
+        "Editar produto";
+
+
+    // Altera o texto da descrição
+    const descricao =
+        document.querySelector(
+            "#modalProduto .modal-header p"
+        );
+
+    if (descricao) {
+        descricao.textContent =
+            "Altere os dados do geladinho.";
+    }
+
+
+    // Mostra a imagem atual
+    const preview =
+        document.getElementById("previewImagem");
+
+    if (preview && produto.imagem) {
+
+        preview.innerHTML = `
+            <div class="imagem-atual">
+
+                <span>Imagem atual</span>
+
+                <img
+                    src="${produto.imagem}"
+                    alt="${produto.nome}"
+                >
+
+            </div>
+        `;
+
+    } else if (preview) {
+
+        preview.innerHTML = "";
+
+    }
+
+
+    // Abre o modal
+    document
+        .getElementById("modalProduto")
         .classList.add("show");
 }
 
+// =========================
+// FECHAR MODAL
+// =========================
 
-/* =========================
-   FECHAR MODAL
-========================= */
+function fecharModalProduto() {
 
-function fecharModal() {
-
-    document.getElementById("modalEditar")
+    document
+        .getElementById("modalProduto")
         .classList.remove("show");
 
     produtoEditando = null;
+
+
+    // Limpa os campos
+    document.getElementById("nomeProduto").value = "";
+
+    document.getElementById("precoProduto").value = "";
+
+    document.getElementById("imagemProduto").value = "";
+
+
+    // Limpa prévia
+    const preview =
+        document.getElementById("previewImagem");
+
+    if (preview) {
+        preview.innerHTML = "";
+    }
 }
 
+// =========================
+// SALVAR PRODUTO
+// =========================
 
-/* =========================
-   SALVAR NOME
-========================= */
+async function salvarProduto() {
+  const nome = document.getElementById("nomeProduto").value.trim();
 
-async function salvarNome() {
+  const preco = parseFloat(document.getElementById("precoProduto").value);
 
-    if (!produtoEditando) return;
+  const arquivo = document.getElementById("imagemProduto").files[0];
 
+  const disponivel =
+    document.getElementById("disponivelProduto").value === "true";
 
-    const novoNome =
-        document.getElementById("nomeProduto").value.trim();
+  // =========================
+  // VALIDAÇÕES
+  // =========================
 
+  if (!nome) {
+    alert("Digite o nome do produto.");
 
-    if (!novoNome) {
+    return;
+  }
 
-        alert("Digite um nome para o produto.");
+  if (isNaN(preco) || preco < 0) {
+    alert("Digite um preço válido.");
 
-        return;
+    return;
+  }
+
+  // =========================
+  // CRIAR PRODUTO
+  // =========================
+
+  if (!produtoEditando) {
+    if (!arquivo) {
+      alert("Escolha uma imagem para o produto.");
+
+      return;
     }
 
+    // Verifica se é imagem
 
-    const { error } = await supabaseClient
-        .from("produtos")
-        .update({
-            nome: novoNome
-        })
-        .eq("id", produtoEditando.id);
+    if (!arquivo.type.startsWith("image/")) {
+      alert("Escolha um arquivo de imagem.");
 
+      return;
+    }
+
+    // =========================
+    // NOME DO ARQUIVO
+    // =========================
+
+    const extensao = arquivo.name.split(".").pop();
+
+    const nomeArquivo = `${Date.now()}-${Math.random()
+      .toString(36)
+      .substring(2)}.${extensao}`;
+
+    // =========================
+    // ENVIAR IMAGEM
+    // =========================
+
+    const { error: uploadError } = await supabaseClient.storage
+      .from("produtos")
+      .upload(nomeArquivo, arquivo, {
+        cacheControl: "3600",
+        upsert: false,
+      });
+
+    if (uploadError) {
+      console.error(uploadError);
+
+      alert("Não foi possível enviar a imagem:\n" + uploadError.message);
+
+      return;
+    }
+
+    // =========================
+    // PEGAR URL DA IMAGEM
+    // =========================
+
+    const { data: imagemData } = supabaseClient.storage
+      .from("produtos")
+      .getPublicUrl(nomeArquivo);
+
+    const imagemUrl = imagemData.publicUrl;
+
+    // =========================
+    // SALVAR PRODUTO
+    // =========================
+
+    const { error } = await supabaseClient.from("produtos").insert({
+      nome: nome,
+
+      preco: preco,
+
+      imagem: imagemUrl,
+
+      disponivel: disponivel,
+    });
 
     if (error) {
+      console.error(error);
 
-        console.error(error);
+      alert("Não foi possível criar o produto:\n" + error.message);
 
-        alert("Não foi possível alterar o produto.");
-
-        return;
+      return;
     }
 
+    alert("Produto criado com sucesso!");
+  }
+
+  // =========================
+  // EDITAR PRODUTO
+  // =========================
+  else {
+    let imagemUrl = produtoEditando.imagem;
+
+    // Se escolheu uma nova imagem
+
+    if (arquivo) {
+      if (!arquivo.type.startsWith("image/")) {
+        alert("Escolha um arquivo de imagem.");
+
+        return;
+      }
+
+      const extensao = arquivo.name.split(".").pop();
+
+      const nomeArquivo = `${Date.now()}-${Math.random()
+        .toString(36)
+        .substring(2)}.${extensao}`;
+
+      const { error: uploadError } = await supabaseClient.storage
+        .from("produtos")
+        .upload(nomeArquivo, arquivo, {
+          cacheControl: "3600",
+          upsert: false,
+        });
+
+      if (uploadError) {
+        console.error(uploadError);
+
+        alert("Não foi possível enviar a nova imagem:\n" + uploadError.message);
+
+        return;
+      }
+
+      const { data: imagemData } = supabaseClient.storage
+        .from("produtos")
+        .getPublicUrl(nomeArquivo);
+
+      imagemUrl = imagemData.publicUrl;
+    }
+
+    // =========================
+    // ATUALIZAR
+    // =========================
+
+    const { error } = await supabaseClient
+      .from("produtos")
+      .update({
+        nome: nome,
+
+        preco: preco,
+
+        imagem: imagemUrl,
+
+        disponivel: disponivel,
+      })
+      .eq("id", produtoEditando.id);
+
+    if (error) {
+      console.error(error);
+
+      alert("Não foi possível editar o produto:\n" + error.message);
+
+      return;
+    }
 
     alert("Produto alterado com sucesso!");
+  }
 
+  fecharModalProduto();
 
-    fecharModal();
-
-    carregarProdutos();
+  carregarProdutos();
 }
 
-
-/* =========================
-   DISPONIBILIDADE
-========================= */
+// =========================
+// ALTERAR DISPONIBILIDADE
+// =========================
 
 async function alternarDisponibilidade(id) {
+  const produto = produtos.find((item) => item.id === id);
 
+  if (!produto) return;
+
+  const novoStatus = !produto.disponivel;
+
+  const { error } = await supabaseClient
+    .from("produtos")
+    .update({
+      disponivel: novoStatus,
+    })
+    .eq("id", id);
+
+  if (error) {
+    console.error(error);
+
+    alert("Não foi possível alterar a disponibilidade.");
+
+    return;
+  }
+
+  carregarProdutos();
+}
+
+async function excluirProduto(id) {
+
+    // Procura o produto
     const produto = produtos.find(
         item => item.id === id
     );
 
-    if (!produto) return;
+    if (!produto) {
+        return;
+    }
 
 
-    const novoStatus = !produto.disponivel;
+    // Confirmação
+    const confirmar = confirm(
+        `Tem certeza que deseja excluir o produto "${produto.nome}"?`
+    );
 
 
+    if (!confirmar) {
+        return;
+    }
+
+
+    // Exclui do banco
     const { error } = await supabaseClient
         .from("produtos")
-        .update({
-            disponivel: novoStatus
-        })
+        .delete()
         .eq("id", id);
 
 
+    // Verifica erro
     if (error) {
 
-        console.error(error);
+        console.error(
+            "Erro ao excluir produto:",
+            error
+        );
 
-        alert("Não foi possível alterar a disponibilidade.");
+        alert(
+            "Não foi possível excluir o produto:\n" +
+            error.message
+        );
 
         return;
     }
 
 
+    // Sucesso
+    alert(
+        "Produto excluído com sucesso!"
+    );
+
+
+    // Atualiza a lista
     carregarProdutos();
 }
 
+// =========================
+// SAIR
+// =========================
 
-/* =========================
-   INICIAR
-========================= */
+async function sair() {
+  const { error } = await supabaseClient.auth.signOut();
 
-carregarProdutos();
+  if (error) {
+    console.error("Erro ao sair:", error);
+
+    alert("Não foi possível sair.");
+
+    return;
+  }
+
+  window.location.href = "admin-login.html";
+}
+
+document
+  .getElementById("imagemProduto")
+  .addEventListener("change", function () {
+    const arquivo = this.files[0];
+
+    const preview = document.getElementById("previewImagem");
+
+    if (!arquivo) {
+      preview.innerHTML = "";
+
+      return;
+    }
+
+    const url = URL.createObjectURL(arquivo);
+
+    preview.innerHTML = `
+            <img
+                src="${url}"
+                alt="Prévia da imagem"
+            >
+        `;
+  });
+
+// =========================
+// INICIAR PAINEL
+// =========================
+
+verificarLogin().then((logado) => {
+  if (logado) {
+    carregarProdutos();
+  }
+});

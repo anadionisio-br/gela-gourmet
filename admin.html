@@ -2,94 +2,183 @@
 <html lang="pt-BR">
 
 <head>
+
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <meta
+        name="viewport"
+        content="width=device-width, initial-scale=1.0"
+    >
 
     <title>Painel Administrativo | Gela Gourmet</title>
 
-    <link rel="stylesheet" href="admin.css">
+    <link
+        rel="stylesheet"
+        href="admin.css"
+    >
 
     <!-- Supabase -->
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
 </head>
+
 
 <body>
 
-    <!-- MENU LATERAL -->
+
+    <!-- =========================
+         MENU LATERAL
+    ========================== -->
+
     <aside class="sidebar">
 
         <div class="logo">
-            <div class="logo-icon">🍓</div>
+
+            <div class="logo-icon">
+                🍓
+            </div>
 
             <div>
-                <h1>Gela Gourmet</h1>
-                <span>Administração</span>
+
+                <h1>
+                    Gela Gourmet
+                </h1>
+
+                <span>
+                    Administração
+                </span>
+
             </div>
+
         </div>
 
+
         <nav>
-            <a href="#" class="menu-item active">
+
+            <a
+                href="#"
+                class="menu-item active"
+            >
                 <span>📊</span>
                 Painel
             </a>
 
-            <a href="#produtos" class="menu-item">
+
+            <a
+                href="#produtos"
+                class="menu-item"
+            >
                 <span>🍨</span>
                 Produtos
             </a>
 
-            <a href="#" class="menu-item">
+
+            <a
+                href="#"
+                class="menu-item"
+            >
                 <span>📦</span>
                 Pedidos
             </a>
 
-            <a href="#" class="menu-item">
+
+            <a
+                href="#"
+                class="menu-item"
+            >
                 <span>⚙️</span>
                 Configurações
             </a>
+
         </nav>
 
+
+        <!-- USUÁRIO / SAIR -->
+
         <div class="sidebar-bottom">
+
             <div class="admin-user">
-                <div class="avatar">A</div>
+
+                <div class="avatar">
+                    A
+                </div>
 
                 <div>
-                    <strong>Administrador</strong>
-                    <small>Painel Gela Gourmet</small>
+
+                    <strong>
+                        Administrador
+                    </strong>
+
+                    <small>
+                        Painel Gela Gourmet
+                    </small>
+
                 </div>
+
             </div>
 
-            <button class="logout">
+
+            <button
+                class="logout"
+                onclick="sair()"
+            >
                 ↪ Sair
             </button>
+
         </div>
 
     </aside>
 
 
-    <!-- CONTEÚDO PRINCIPAL -->
+
+    <!-- =========================
+         CONTEÚDO PRINCIPAL
+    ========================== -->
+
     <main class="main">
 
+
         <!-- TOPO -->
+
         <header class="topbar">
 
             <div>
-                <h2>Painel Administrativo</h2>
-                <p>Gerencie os produtos da Gela Gourmet</p>
+
+                <h2>
+                    Painel Administrativo
+                </h2>
+
+                <p>
+                    Gerencie os produtos da Gela Gourmet
+                </p>
+
             </div>
 
+
             <div class="top-actions">
+
                 <span class="status-online">
+
                     <span></span>
+
                     Sistema online
+
                 </span>
+
             </div>
 
         </header>
 
 
-        <!-- CARDS DE RESUMO -->
+
+        <!-- =========================
+             CARDS DE RESUMO
+        ========================== -->
+
         <section class="summary">
+
+
+            <!-- TOTAL -->
 
             <div class="summary-card">
 
@@ -98,12 +187,22 @@
                 </div>
 
                 <div>
-                    <span>Total de produtos</span>
-                    <strong id="totalProdutos">0</strong>
+
+                    <span>
+                        Total de produtos
+                    </span>
+
+                    <strong id="totalProdutos">
+                        0
+                    </strong>
+
                 </div>
 
             </div>
 
+
+
+            <!-- DISPONÍVEIS -->
 
             <div class="summary-card">
 
@@ -112,12 +211,22 @@
                 </div>
 
                 <div>
-                    <span>Disponíveis</span>
-                    <strong id="produtosDisponiveis">0</strong>
+
+                    <span>
+                        Disponíveis
+                    </span>
+
+                    <strong id="produtosDisponiveis">
+                        0
+                    </strong>
+
                 </div>
 
             </div>
 
+
+
+            <!-- INDISPONÍVEIS -->
 
             <div class="summary-card">
 
@@ -126,34 +235,86 @@
                 </div>
 
                 <div>
-                    <span>Indisponíveis</span>
-                    <strong id="produtosIndisponiveis">0</strong>
+
+                    <span>
+                        Indisponíveis
+                    </span>
+
+                    <strong id="produtosIndisponiveis">
+                        0
+                    </strong>
+
                 </div>
 
             </div>
+
 
         </section>
 
 
-        <!-- PRODUTOS -->
-        <section class="products-section" id="produtos">
 
-            <div class="section-header">
+        <!-- =========================
+             PRODUTOS
+        ========================== -->
+
+        <section
+            id="produtos"
+            class="products-section"
+        >
+
+
+            <!-- CABEÇALHO DOS PRODUTOS -->
+
+            <div class="products-header">
 
                 <div>
-                    <h2>Produtos</h2>
-                    <p>Gerencie a disponibilidade e os nomes dos produtos.</p>
+
+                    <h2>
+                        Produtos
+                    </h2>
+
+                    <p>
+                        Gerencie os geladinhos disponíveis no seu catálogo.
+                    </p>
+
                 </div>
 
-                <button class="refresh-button" onclick="carregarProdutos()">
-                    ↻ Atualizar
-                </button>
+
+                <div class="products-header-actions">
+
+                    <!-- ATUALIZAR -->
+
+                    <button
+                        class="refresh-button"
+                        onclick="carregarProdutos()"
+                    >
+                        ↻ Atualizar
+                    </button>
+
+
+                    <!-- NOVO PRODUTO -->
+
+                    <button
+                        class="add-product-button"
+                        onclick="abrirCriacao()"
+                    >
+                        ➕ Novo produto
+                    </button>
+
+                </div>
 
             </div>
 
 
-            <!-- PRODUTOS SERÃO INSERIDOS AQUI -->
-            <div id="productsGrid" class="products-grid">
+
+            <!-- =========================
+                 LISTA DE PRODUTOS
+            ========================== -->
+
+            <div
+                id="productsGrid"
+                class="products-grid"
+            >
 
                 <div class="loading">
                     Carregando produtos...
@@ -161,31 +322,54 @@
 
             </div>
 
+
         </section>
 
     </main>
 
 
-    <!-- MODAL EDITAR -->
-    <div id="modalEditar" class="modal">
 
-        <div class="modal-box">
+    <!-- =========================
+         MODAL CRIAR / EDITAR
+    ========================== -->
 
-            <button class="close-modal" onclick="fecharModal()">
-                ×
-            </button>
+    <div
+        id="modalProduto"
+        class="modal"
+    >
+
+        <div class="modal-content">
+
+
+            <!-- CABEÇALHO DO MODAL -->
 
             <div class="modal-header">
-                <div class="modal-icon">
-                    ✏️
-                </div>
 
                 <div>
-                    <h2>Editar produto</h2>
-                    <p>Altere o nome do produto.</p>
+
+                    <h2 id="tituloModal">
+                        Novo produto
+                    </h2>
+
+                    <p>
+                        Preencha os dados do geladinho.
+                    </p>
+
                 </div>
+
+
+                <button
+                    class="close-modal"
+                    onclick="fecharModalProduto()"
+                >
+                    ×
+                </button>
+
             </div>
 
+
+
+            <!-- NOME -->
 
             <div class="form-group">
 
@@ -196,31 +380,117 @@
                 <input
                     type="text"
                     id="nomeProduto"
-                    placeholder="Digite o nome do produto"
+                    placeholder="Ex: Ninho com Nutella"
                 >
 
             </div>
 
 
-            <div class="modal-buttons">
 
-                <button class="cancel-button" onclick="fecharModal()">
+            <!-- PREÇO -->
+
+            <div class="form-group">
+
+                <label for="precoProduto">
+                    Preço
+                </label>
+
+                <input
+                    type="number"
+                    id="precoProduto"
+                    placeholder="8.00"
+                    step="0.01"
+                    min="0"
+                >
+
+            </div>
+
+
+
+            <!-- IMAGEM -->
+
+<div class="form-group">
+
+    <label for="imagemProduto">
+        Imagem do produto
+    </label>
+
+    <input
+        type="file"
+        id="imagemProduto"
+        accept="image/*"
+    >
+
+    <small>
+        Escolha uma foto do geladinho no seu computador.
+    </small>
+
+    <div id="previewImagem" class="preview-imagem">
+    </div>
+
+</div>
+
+
+
+            <!-- DISPONIBILIDADE -->
+
+            <div class="form-group">
+
+                <label for="disponivelProduto">
+                    Disponibilidade
+                </label>
+
+                <select id="disponivelProduto">
+
+                    <option value="true">
+                        Disponível
+                    </option>
+
+                    <option value="false">
+                        Indisponível
+                    </option>
+
+                </select>
+
+            </div>
+
+
+
+            <!-- BOTÕES -->
+
+            <div class="modal-actions">
+
+                <button
+                    class="cancel-button"
+                    onclick="fecharModalProduto()"
+                >
                     Cancelar
                 </button>
 
-                <button class="save-button" onclick="salvarNome()">
-                    💾 Salvar
+
+                <button
+                    class="save-button"
+                    onclick="salvarProduto()"
+                >
+                    💾 Salvar produto
                 </button>
 
             </div>
+
 
         </div>
 
     </div>
 
 
+
+    <!-- =========================
+         JAVASCRIPT
+    ========================== -->
+
     <script src="admin.js"></script>
 
+<div id="modalEditar" class="modal"></div>
 </body>
 
 </html>
