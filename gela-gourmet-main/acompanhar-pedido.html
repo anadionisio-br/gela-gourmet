@@ -1,0 +1,325 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+
+<head>
+
+    <meta charset="UTF-8">
+
+    <meta
+        name="viewport"
+        content="width=device-width, initial-scale=1.0"
+    >
+
+    <title>Acompanhar pedido | Gela Gourmet</title>
+
+    <link
+        rel="stylesheet"
+        href="acompanhar-pedido.css"
+    >
+
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
+</head>
+
+<body>
+
+    <main class="pagina">
+
+        <section class="acompanhamento">
+
+            <div class="logo-area">
+
+                <div class="logo-circle">
+                    🍓
+                </div>
+
+                <h1>
+                    Gela Gourmet
+                </h1>
+
+                <p>
+                    Cremosos, recheados e irresistíveis
+                </p>
+
+            </div>
+
+
+            <!-- CARREGANDO -->
+
+            <div
+                id="carregando"
+                class="estado"
+            >
+
+                <div class="spinner"></div>
+
+                <p>
+                    Carregando seu pedido...
+                </p>
+
+            </div>
+
+
+            <!-- ERRO -->
+
+            <div
+                id="erro"
+                class="estado erro"
+                style="display: none;"
+            >
+
+                <div class="estado-icone">
+                    💔
+                </div>
+
+                <h2>
+                    Pedido não encontrado
+                </h2>
+
+                <p>
+                    Não conseguimos encontrar esse pedido.
+                </p>
+
+                <a href="index.html">
+                    Voltar para o cardápio
+                </a>
+
+            </div>
+
+
+            <!-- PEDIDO -->
+
+            <div
+                id="pedido"
+                style="display: none;"
+            >
+
+                <div class="pedido-cabecalho">
+
+                    <span>
+                        NÚMERO DO PEDIDO
+                    </span>
+
+                    <strong id="numeroPedido">
+                        #000
+                    </strong>
+
+                </div>
+
+
+                <div class="saudacao">
+
+                    <h2 id="saudacaoCliente">
+                        Olá! 💗
+                    </h2>
+
+                    <p>
+                        Acompanhe seu pedido por aqui.
+                    </p>
+
+                </div>
+
+
+                <!-- STATUS -->
+
+                <div class="status-box">
+
+                    <div class="status-titulo">
+                        <span>
+                            Status do pedido
+                        </span>
+
+                        <strong id="statusTexto">
+                            Pendente
+                        </strong>
+                    </div>
+
+
+                    <div class="progresso">
+
+                        <div class="linha-progresso">
+
+                            <div
+                                id="progressoAtivo"
+                                class="progresso-ativo"
+                            ></div>
+
+                        </div>
+
+
+                        <div class="etapas">
+
+                            <div
+                                class="etapa"
+                                data-status="pendente"
+                            >
+
+                                <div class="etapa-icone">
+                                    ✓
+                                </div>
+
+                                <span>
+                                    Recebido
+                                </span>
+
+                            </div>
+
+
+                            <div
+                                class="etapa"
+                                data-status="preparo"
+                            >
+
+                                <div class="etapa-icone">
+                                    🍓
+                                </div>
+
+                                <span>
+                                    Preparo
+                                </span>
+
+                            </div>
+
+
+                            <div
+                                class="etapa"
+                                data-status="entrega"
+                            >
+
+                                <div class="etapa-icone">
+                                    🛵
+                                </div>
+
+                                <span>
+                                    Entrega
+                                </span>
+
+                            </div>
+
+
+                            <div
+                                class="etapa"
+                                data-status="entregue"
+                            >
+
+                                <div class="etapa-icone">
+                                    💗
+                                </div>
+
+                                <span>
+                                    Entregue
+                                </span>
+
+                            </div>
+
+                        </div>
+
+                    </div>
+
+
+                    <div
+                        id="mensagemStatus"
+                        class="mensagem-status"
+                    >
+                        Seu pedido foi recebido com sucesso! 💗
+                    </div>
+
+                </div>
+
+
+                <!-- ITENS -->
+
+                <div class="bloco">
+
+                    <div class="bloco-titulo">
+                        Seu pedido
+                    </div>
+
+                    <div id="itensPedido">
+                    </div>
+
+                    <div class="total">
+
+                        <span>
+                            Total
+                        </span>
+
+                        <strong id="totalPedido">
+                            R$ 0,00
+                        </strong>
+
+                    </div>
+
+                </div>
+
+
+                <!-- INFORMAÇÕES -->
+
+                <div class="bloco">
+
+                    <div class="bloco-titulo">
+                        Informações
+                    </div>
+
+                    <div class="informacoes">
+
+                        <div>
+
+                            <span>
+                                Pagamento
+                            </span>
+
+                            <strong id="pagamentoPedido">
+                                -
+                            </strong>
+
+                        </div>
+
+
+                        <div>
+
+                            <span>
+                                Tipo
+                            </span>
+
+                            <strong id="tipoPedido">
+                                -
+                            </strong>
+
+                        </div>
+
+                    </div>
+
+                </div>
+
+
+                <div class="atualizacao">
+
+                    <span class="bolinha"></span>
+
+                    <span>
+                        Atualizando automaticamente
+                    </span>
+
+                </div>
+
+
+                <a
+                    href="index.html"
+                    class="voltar"
+                >
+                    ← Voltar para o cardápio
+                </a>
+
+            </div>
+
+        </section>
+
+    </main>
+
+
+    <script src="acompanhar-pedido.js"></script>
+
+</body>
+
+</html>
