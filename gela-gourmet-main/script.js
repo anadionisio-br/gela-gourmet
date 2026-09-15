@@ -1567,6 +1567,10 @@ function verificarPedidoSalvo() {
 // CRIAR PEDIDO
 // =========================================================
 
+// =========================================================
+// CRIAR PEDIDO
+// =========================================================
+
 async function createOrder() {
 
   if (!validateOrder()) {
@@ -1574,9 +1578,7 @@ async function createOrder() {
   }
 
   const button =
-    document.getElementById(
-      "sendOrder"
-    );
+    document.getElementById("sendOrder");
 
   const originalText =
     button
@@ -1585,7 +1587,6 @@ async function createOrder() {
 
   if (button) {
     button.disabled = true;
-
     button.innerHTML =
       "⏳ Registrando pedido...";
   }
@@ -1593,24 +1594,16 @@ async function createOrder() {
   try {
 
     const nameInput =
-      document.getElementById(
-        "customerName"
-      );
+      document.getElementById("customerName");
 
     const phoneInput =
-      document.getElementById(
-        "customerPhone"
-      );
+      document.getElementById("customerPhone");
 
     const paymentInput =
-      document.getElementById(
-        "paymentMethod"
-      );
+      document.getElementById("paymentMethod");
 
     const noteInput =
-      document.getElementById(
-        "customerNote"
-      );
+      document.getElementById("customerNote");
 
     if (
       !nameInput ||
@@ -1658,28 +1651,35 @@ async function createOrder() {
     }
 
     console.log(
-      "📦 Dados do pedido:",
-      {
-        name,
-        phone,
-        payment,
-        orderType,
-        address,
-        itensPedido,
-        subtotal,
-        total
-      }
+      "================================="
+    );
+
+    console.log(
+      "📦 DADOS DO PEDIDO"
+    );
+
+    console.log({
+      name,
+      phone,
+      payment,
+      orderType,
+      address,
+      itensPedido,
+      subtotal,
+      total
+    });
+
+    console.log(
+      "================================="
     );
 
     // =====================================================
-    // TENTATIVA 1 - RPC
+    // CRIAR PEDIDO NO SUPABASE
     // =====================================================
 
     console.log(
-      "📡 Tentando criar pedido pela RPC..."
+      "📡 Enviando pedido para o Supabase..."
     );
-
-    let pedidoId = null;
 
     const rpcResult =
       await supabaseClient.rpc(
@@ -1708,108 +1708,71 @@ async function createOrder() {
         }
       );
 
-    if (
-      !rpcResult.error &&
-      rpcResult.data
-    ) {
+    console.log(
+      "📡 Resposta do Supabase:",
+      rpcResult
+    );
 
-      pedidoId =
-        rpcResult.data;
+    // =====================================================
+    // VERIFICAR ERRO
+    // =====================================================
 
-      console.log(
-        "✅ Pedido criado pela RPC:",
-        pedidoId
+    if (rpcResult.error) {
+
+      console.error(
+        "❌ ERRO DO SUPABASE:"
       );
 
-    } else {
-
-      console.warn(
-        "⚠️ RPC não conseguiu criar o pedido.",
-        rpcResult.error
+      console.error(
+        "Mensagem:",
+        rpcResult.error.message
       );
 
-      // ===================================================
-      // TENTATIVA 2 - INSERT DIRETO
-      // ===================================================
-
-      console.log(
-        "📡 Tentando inserir diretamente na tabela pedidos..."
+      console.error(
+        "Detalhes:",
+        rpcResult.error.details
       );
 
-      const insertResult =
-        await supabaseClient
-          .from("pedidos")
-          .insert({
-            cliente_nome:
-              name,
-
-            cliente_telefone:
-              phone,
-
-            cliente_endereco:
-              address,
-
-            itens:
-              itensPedido,
-
-            total:
-              total,
-
-            forma_pagamento:
-              payment,
-
-            tipo_entrega:
-              orderType,
-
-            status:
-              "pendente"
-          })
-          .select("id")
-          .single();
-
-      if (insertResult.error) {
-
-        console.error(
-          "❌ RPC:",
-          rpcResult.error
-        );
-
-        console.error(
-          "❌ INSERT:",
-          insertResult.error
-        );
-
-        throw new Error(
-          "RPC: " +
-          (
-            rpcResult.error?.message ||
-            "erro desconhecido"
-          ) +
-          " | INSERT: " +
-          (
-            insertResult.error?.message ||
-            "erro desconhecido"
-          )
-        );
-      }
-
-      pedidoId =
-        insertResult.data.id;
-
-      console.log(
-        "✅ Pedido criado diretamente:",
-        pedidoId
+      console.error(
+        "Hint:",
+        rpcResult.error.hint
       );
-    }
 
-    if (!pedidoId) {
+      console.error(
+        "Código:",
+        rpcResult.error.code
+      );
+
       throw new Error(
-        "O Supabase não retornou o número do pedido."
+        rpcResult.error.message ||
+        "Erro ao registrar pedido."
       );
     }
 
     // =====================================================
-    // SALVAR PARA ACOMPANHAMENTO
+    // ID DO PEDIDO
+    // =====================================================
+
+    const pedidoId =
+      rpcResult.data;
+
+    console.log(
+      "✅ PEDIDO CRIADO COM SUCESSO!"
+    );
+
+    console.log(
+      "📦 Número do pedido:",
+      pedidoId
+    );
+
+    if (!pedidoId) {
+      throw new Error(
+        "O pedido foi criado, mas o Supabase não retornou o número do pedido."
+      );
+    }
+
+    // =====================================================
+    // SALVAR ACOMPANHAMENTO
     // =====================================================
 
     salvarPedidoAcompanhado(
@@ -1943,7 +1906,9 @@ async function createOrder() {
     // =====================================================
 
     nameInput.value = "";
+
     phoneInput.value = "";
+
     paymentInput.value = "";
 
     if (noteInput) {
@@ -1951,7 +1916,7 @@ async function createOrder() {
     }
 
     // =====================================================
-    // SUCESSO
+    // MOSTRAR SUCESSO
     // =====================================================
 
     mostrarPedidoSucesso(
@@ -1962,6 +1927,27 @@ async function createOrder() {
     );
 
   } catch (error) {
+
+    console.error(
+      "================================="
+    );
+
+    console.error(
+      "❌ NÃO FOI POSSÍVEL REGISTRAR O PEDIDO"
+    );
+
+    console.error(
+      error
+    );
+
+    console.error(
+      "Mensagem:",
+      error?.message
+    );
+
+    console.error(
+      "================================="
+    );
 
     mostrarErroPedido(error);
 
