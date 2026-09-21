@@ -1,780 +1,489 @@
-<!DOCTYPE html>
+<!doctype html>
 
 <html lang="pt-BR">
+  <head>
+    <meta charset="UTF-8" />
 
-<head>
-    <meta charset="UTF-8">
+    ```
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 
-```
-<meta
-    name="viewport"
-    content="width=device-width, initial-scale=1.0"
->
+    <title>Gela Gourmet | Geladinhos Gourmet</title>
 
-<title>Gela Gourmet | Geladinhos Gourmet</title>
+    <meta
+      name="description"
+      content="Geladinhos Gourmet cremosos, recheados e irresistíveis. Faça seu pedido online!"
+    />
 
-<meta
-    name="description"
-    content="Geladinhos Gourmet cremosos, recheados e irresistíveis. Faça seu pedido online!"
->
+    <link rel="stylesheet" href="style.css" />
+    ```
+  </head>
 
-<link rel="stylesheet" href="style.css">
-```
-
-</head>
-
-<body>
-
-```
-<!-- CABEÇALHO -->
-<header class="topo">
-
-    <div class="nav">
-
+  <body>
+    ```
+    <!-- CABEÇALHO -->
+    <header class="topo">
+      <div class="nav">
         <a class="brand" href="#inicio">
-            <img
-                src="imagens/logo.jpeg"
-                alt="Logo Gela Gourmet"
-            >
+          <img src="imagens/logo.jpeg" alt="Logo Gela Gourmet" />
         </a>
 
         <nav class="links">
+          <a href="#inicio"> Início </a>
 
-            <a href="#inicio">
-                Início
-            </a>
+          <a href="#cardapio"> Cardápio </a>
 
-            <a href="#cardapio">
-                Cardápio
-            </a>
+          <a href="#pedido"> Meu pedido </a>
 
-            <a href="#pedido">
-                Meu pedido
-            </a>
+          <a href="#sobre"> Sobre </a>
 
-            <a href="#sobre">
-                Sobre
-            </a>
-
-            <a href="#entregas">
-                Entregas
-            </a>
-
+          <a href="#entregas"> Entregas </a>
         </nav>
 
-        <a
-            class="btn small"
-            href="#cardapio"
-        >
-            🛒 Fazer pedido
+        <a class="btn small" href="#cardapio"> 🛒 Fazer pedido </a>
+
+        <a href="#" id="btnAcompanharPedido" class="btn-acompanhar-pedido">
+          Acompanhar pedido
         </a>
+      </div>
+    </header>
 
-    </div>
-
-</header>
-
-
-<main>
-
-    <!-- =====================================================
+    <main>
+      <!-- =====================================================
          HERO / INÍCIO
     ====================================================== -->
 
-    <section
-        id="inicio"
-        class="hero"
-    >
-
+      <section id="inicio" class="hero">
         <div class="hero-text">
+          <img
+            class="hero-logo"
+            src="imagens/logo.jpeg"
+            alt="Logo Gela Gourmet"
+          />
 
-            <img
-                class="hero-logo"
-                src="imagens/logo.jpeg"
-                alt="Logo Gela Gourmet"
-            >
+          <p class="script">Geladinhos Gourmet</p>
 
-            <p class="script">
-                Geladinhos Gourmet
-            </p>
+          <h1>Cremosos, recheados e irresistíveis! ♡</h1>
 
-            <h1>
-                Cremosos, recheados e irresistíveis! ♡
-            </h1>
+          <ul>
+            <li>🍦 Sabores que dão água na boca</li>
 
-            <ul>
+            <li>📍 Tambaú e Santa Cruz das Palmeiras</li>
 
-                <li>
-                    🍦 Sabores que dão água na boca
-                </li>
+            <li>💬 Faça seu pedido pelo site</li>
+          </ul>
 
-                <li>
-                    📍 Tambaú e Santa Cruz das Palmeiras
-                </li>
-
-                <li>
-                    💬 Faça seu pedido pelo site
-                </li>
-
-            </ul>
-
-            <a
-                class="btn"
-                href="#cardapio"
-            >
-                🍦 Ver cardápio →
-            </a>
-
+          <a class="btn" href="#cardapio"> 🍦 Ver cardápio → </a>
         </div>
-
 
         <div class="hero-photo">
-
-            <img
-                src="imagens/fotoinicial.jpeg"
-                alt="Geladinhos Gela Gourmet"
-            >
-
+          <img src="imagens/fotoinicial.jpeg" alt="Geladinhos Gela Gourmet" />
         </div>
+      </section>
 
-    </section>
-
-
-    <!-- =====================================================
+      <!-- =====================================================
          BENEFÍCIOS
     ====================================================== -->
 
-    <section class="benefits">
-
+      <section class="benefits">
         <div>
+          ❄️
 
-            ❄️
-
-            <b>
-                SABORES
-                <br>
-                INCRÍVEIS
-            </b>
-
+          <b>
+            SABORES
+            <br />
+            INCRÍVEIS
+          </b>
         </div>
 
-
         <div>
+          ♡
 
-            ♡
-
-            <b>
-                PRODUTOS
-                <br>
-                DE QUALIDADE
-            </b>
-
+          <b>
+            PRODUTOS
+            <br />
+            DE QUALIDADE
+          </b>
         </div>
 
-
         <div>
+          🚚
 
-            🚚
-
-            <b>
-                ENTREGA
-                <br>
-                RÁPIDA
-            </b>
-
+          <b>
+            ENTREGA
+            <br />
+            RÁPIDA
+          </b>
         </div>
 
-
         <div>
+          ✓
 
-            ✓
-
-            <b>
-                PEDIDO
-                <br>
-                FÁCIL
-            </b>
-
+          <b>
+            PEDIDO
+            <br />
+            FÁCIL
+          </b>
         </div>
+      </section>
 
-    </section>
-
-
-    <!-- =====================================================
+      <!-- =====================================================
          CARDÁPIO
     ====================================================== -->
 
-    <section
-        id="cardapio"
-        class="section"
-    >
-
+      <section id="cardapio" class="section">
         <div class="title">
+          <span> ♡ </span>
 
-            <span>
-                ♡
-            </span>
+          <div>
+            <p class="script">Nosso Cardápio</p>
 
-            <div>
+            <h2>Escolha seus sabores favoritos!</h2>
+          </div>
 
-                <p class="script">
-                    Nosso Cardápio
-                </p>
-
-                <h2>
-                    Escolha seus sabores favoritos!
-                </h2>
-
-            </div>
-
-            <span>
-                ♡
-            </span>
-
+          <span> ♡ </span>
         </div>
-
 
         <!--
             OS PRODUTOS DO SUPABASE
             APARECEM AQUI AUTOMATICAMENTE
         -->
 
-        <div
-            id="products"
-            class="cards"
-        ></div>
+        <div id="products" class="cards"></div>
+      </section>
 
-    </section>
-
-
-    <!-- =====================================================
+      <!-- =====================================================
          ÁREA DE PEDIDO / CARRINHO
     ====================================================== -->
 
-    <section
-        id="pedido"
-        class="order-section"
-    >
-
+      <section id="pedido" class="order-section">
         <div class="order-card">
+          <!-- INTRODUÇÃO -->
 
+          <div class="order-intro">
+            <p class="script">Faça já o seu pedido!</p>
 
-            <!-- INTRODUÇÃO -->
+            <h2>Monte do seu jeito ♡</h2>
 
-            <div class="order-intro">
+            <p>
+              Escolha os sabores acima, ajuste as quantidades e informe seus
+              dados para finalizar.
+            </p>
+          </div>
 
-                <p class="script">
-                    Faça já o seu pedido!
-                </p>
-
-                <h2>
-                    Monte do seu jeito ♡
-                </h2>
-
-                <p>
-                    Escolha os sabores acima, ajuste as quantidades
-                    e informe seus dados para finalizar.
-                </p>
-
-            </div>
-
-
-            <div class="order-content">
-
-
-                <!-- =================================================
+          <div class="order-content">
+            <!-- =================================================
                      CARRINHO
                 ================================================== -->
 
-                <div
-                    id="cartItems"
-                    class="cart-items"
-                >
+            <div id="cartItems" class="cart-items">
+              <p class="empty">Seu carrinho está vazio. 💗</p>
+            </div>
 
-                    <p class="empty">
-                        Seu carrinho está vazio. 💗
-                    </p>
-
-                </div>
-
-
-                <!-- =================================================
+            <!-- =================================================
                      ENTREGA
                 ================================================== -->
 
-                <div class="delivery-box">
+            <div class="delivery-box">
+              <h3>📍 Como você quer receber?</h3>
 
-                    <h3>
-                        📍 Como você quer receber?
-                    </h3>
+              <div class="delivery-options">
+                <!-- ENTREGA -->
 
+                <label class="option-card">
+                  <input
+                    type="radio"
+                    name="orderType"
+                    value="delivery"
+                    checked
+                  />
 
-                    <div class="delivery-options">
+                  <span>
+                    🚚
 
+                    <strong> Entrega </strong>
 
-                        <!-- ENTREGA -->
+                    <small> Taxa de R$ 5,00 </small>
+                  </span>
+                </label>
 
-                        <label class="option-card">
+                <!-- RETIRADA -->
 
-                            <input
-                                type="radio"
-                                name="orderType"
-                                value="delivery"
-                                checked
-                            >
+                <label class="option-card">
+                  <input type="radio" name="orderType" value="pickup" />
 
-                            <span>
+                  <span>
+                    🏪
 
-                                🚚
+                    <strong> Retirada </strong>
 
-                                <strong>
-                                    Entrega
-                                </strong>
+                    <small> Sem taxa </small>
+                  </span>
+                </label>
+              </div>
 
-                                <small>
-                                    Taxa de R$ 5,00
-                                </small>
-
-                            </span>
-
-                        </label>
-
-
-                        <!-- RETIRADA -->
-
-                        <label class="option-card">
-
-                            <input
-                                type="radio"
-                                name="orderType"
-                                value="pickup"
-                            >
-
-                            <span>
-
-                                🏪
-
-                                <strong>
-                                    Retirada
-                                </strong>
-
-                                <small>
-                                    Sem taxa
-                                </small>
-
-                            </span>
-
-                        </label>
-
-                    </div>
-
-
-                    <!-- =================================================
+              <!-- =================================================
                          CAMPOS DE ENTREGA
                     ================================================== -->
 
-                    <div id="deliveryFields">
+              <div id="deliveryFields">
+                <!-- CIDADE -->
 
+                <label for="city"> Cidade </label>
 
-                        <!-- CIDADE -->
+                <select id="city">
+                  <option value="">Selecione sua cidade</option>
 
-                        <label for="city">
-                            Cidade
-                        </label>
+                  <option value="Tambaú - SP">Tambaú</option>
 
-                        <select id="city">
+                  <option value="Santa Cruz das Palmeiras - SP">
+                    Santa Cruz das Palmeiras
+                  </option>
+                </select>
 
-                            <option value="">
-                                Selecione sua cidade
-                            </option>
+                <!-- RUA -->
 
-                            <option value="Tambaú - SP">
-                                Tambaú
-                            </option>
+                <label for="street"> Rua </label>
 
-                            <option value="Santa Cruz das Palmeiras - SP">
-                                Santa Cruz das Palmeiras
-                            </option>
+                <div class="autocomplete">
+                  <input
+                    id="street"
+                    type="text"
+                    autocomplete="off"
+                    placeholder="Escolha a cidade primeiro..."
+                    disabled
+                    list="streetList"
+                  />
 
-                        </select>
+                  <datalist id="streetList"></datalist>
 
-
-                        <!-- RUA -->
-
-                        <label for="street">
-                            Rua
-                        </label>
-
-                        <div class="autocomplete">
-
-                            <input
-                                id="street"
-                                type="text"
-                                autocomplete="off"
-                                placeholder="Escolha a cidade primeiro..."
-                                disabled
-                                list="streetList"
-                            >
-
-                            <datalist id="streetList"></datalist>
-
-                            <div
-                                id="streetSuggestions"
-                                class="suggestions"
-                            ></div>
-
-                        </div>
-
-
-                        <!-- NÚMERO + BAIRRO -->
-
-                        <div class="address-row">
-
-
-                            <!-- NÚMERO -->
-
-                            <div>
-
-                                <label for="number">
-                                    Número
-                                </label>
-
-                                <input
-                                    id="number"
-                                    type="text"
-                                    inputmode="numeric"
-                                    placeholder="Número"
-                                >
-
-                            </div>
-
-
-                            <!-- BAIRRO -->
-
-                            <div>
-
-                                <label for="neighborhood">
-                                    Bairro
-                                </label>
-
-                                <div class="autocomplete">
-
-                                    <input
-                                        type="text"
-                                        id="neighborhood"
-                                        autocomplete="off"
-                                        placeholder="Escolha a cidade primeiro..."
-                                        disabled
-                                        list="neighborhoodList"
-                                    >
-
-                                    <datalist
-                                        id="neighborhoodList"
-                                    ></datalist>
-
-                                    <div
-                                        id="neighborhoodSuggestions"
-                                        class="suggestions"
-                                    ></div>
-
-                                </div>
-
-                            </div>
-
-                        </div>
-
-                    </div>
-
+                  <div id="streetSuggestions" class="suggestions"></div>
                 </div>
 
+                <!-- NÚMERO + BAIRRO -->
 
-                <!-- =================================================
+                <div class="address-row">
+                  <!-- NÚMERO -->
+
+                  <div>
+                    <label for="number"> Número </label>
+
+                    <input
+                      id="number"
+                      type="text"
+                      inputmode="numeric"
+                      placeholder="Número"
+                    />
+                  </div>
+
+                  <!-- BAIRRO -->
+
+                  <div>
+                    <label for="neighborhood"> Bairro </label>
+
+                    <div class="autocomplete">
+                      <input
+                        type="text"
+                        id="neighborhood"
+                        autocomplete="off"
+                        placeholder="Escolha a cidade primeiro..."
+                        disabled
+                        list="neighborhoodList"
+                      />
+
+                      <datalist id="neighborhoodList"></datalist>
+
+                      <div
+                        id="neighborhoodSuggestions"
+                        class="suggestions"
+                      ></div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- =================================================
                      DADOS DO CLIENTE
                 ================================================== -->
 
-                <div class="customer">
+            <div class="customer">
+              <h3>👤 Seus dados</h3>
 
-                    <h3>
-                        👤 Seus dados
-                    </h3>
+              <!-- NOME -->
 
+              <label for="customerName"> Seu Nome </label>
 
-                    <!-- NOME -->
+              <input
+                id="customerName"
+                type="text"
+                placeholder="Digite seu nome"
+                autocomplete="name"
+              />
 
-                    <label for="customerName">
-                        Seu Nome
-                    </label>
+              <!-- TELEFONE -->
 
-                    <input
-                        id="customerName"
-                        type="text"
-                        placeholder="Digite seu nome"
-                        autocomplete="name"
-                    >
+              <label for="customerPhone"> WhatsApp / Telefone </label>
 
+              <input
+                id="customerPhone"
+                type="tel"
+                inputmode="tel"
+                placeholder="(19) 99999-9999"
+                autocomplete="tel"
+              />
 
-                    <!-- TELEFONE -->
+              <!-- PAGAMENTO -->
 
-                    <label for="customerPhone">
-                        WhatsApp / Telefone
-                    </label>
+              <label for="paymentMethod"> Forma de pagamento </label>
 
-                    <input
-                        id="customerPhone"
-                        type="tel"
-                        inputmode="tel"
-                        placeholder="(19) 99999-9999"
-                        autocomplete="tel"
-                    >
+              <select id="paymentMethod">
+                <option value="">Selecione uma forma de pagamento</option>
 
+                <option value="pix">📱 Pix</option>
 
-                    <!-- PAGAMENTO -->
+                <option value="dinheiro">💵 Dinheiro</option>
 
-                    <label for="paymentMethod">
-                        Forma de pagamento
-                    </label>
+                <option value="cartao">💳 Cartão</option>
+              </select>
 
-                    <select id="paymentMethod">
+              <!-- OBSERVAÇÃO -->
 
-                        <option value="">
-                            Selecione uma forma de pagamento
-                        </option>
+              <label for="customerNote"> Observações </label>
 
-                        <option value="pix">
-                            📱 Pix
-                        </option>
+              <textarea
+                id="customerNote"
+                placeholder="Observação (opcional)"
+              ></textarea>
+            </div>
 
-                        <option value="dinheiro">
-                            💵 Dinheiro
-                        </option>
-
-                        <option value="cartao">
-                            💳 Cartão
-                        </option>
-
-                    </select>
-
-
-                    <!-- OBSERVAÇÃO -->
-
-                    <label for="customerNote">
-                        Observações
-                    </label>
-
-                    <textarea
-                        id="customerNote"
-                        placeholder="Observação (opcional)"
-                    ></textarea>
-
-                </div>
-
-
-                <!-- =================================================
+            <!-- =================================================
                      TOTAL
                 ================================================== -->
 
-                <div class="total-details">
+            <div class="total-details">
+              <!-- SUBTOTAL -->
 
+              <div class="subtotal-row">
+                <span> Geladinhos </span>
 
-                    <!-- SUBTOTAL -->
+                <strong id="subtotal"> R$ 0,00 </strong>
+              </div>
 
-                    <div class="subtotal-row">
+              <!-- ENTREGA -->
 
-                        <span>
-                            Geladinhos
-                        </span>
+              <div class="delivery-row">
+                <span> Taxa de entrega </span>
 
-                        <strong id="subtotal">
-                            R$ 0,00
-                        </strong>
+                <strong id="deliveryFee"> R$ 5,00 </strong>
+              </div>
 
-                    </div>
+              <!-- TOTAL -->
 
+              <div class="total-row">
+                <span> Total </span>
 
-                    <!-- ENTREGA -->
+                <strong id="total"> R$ 0,00 </strong>
+              </div>
+            </div>
 
-                    <div class="delivery-row">
-
-                        <span>
-                            Taxa de entrega
-                        </span>
-
-                        <strong id="deliveryFee">
-                            R$ 5,00
-                        </strong>
-
-                    </div>
-
-
-                    <!-- TOTAL -->
-
-                    <div class="total-row">
-
-                        <span>
-                            Total
-                        </span>
-
-                        <strong id="total">
-                            R$ 0,00
-                        </strong>
-
-                    </div>
-
-                </div>
-
-
-                <!-- =================================================
+            <!-- =================================================
                      FINALIZAR PEDIDO
                 ================================================== -->
 
-                <button
-                    id="sendOrder"
-                    class="btn full"
-                    type="button"
-                >
-                    📱 Finalizar pedido pelo WhatsApp
-                </button>
+            <button id="sendOrder" class="btn full" type="button">
+              📱 Finalizar pedido pelo WhatsApp
+            </button>
 
-
-                <small class="disclaimer">
-
-                    Seu pedido será registrado no sistema e depois
-                    aberto no WhatsApp para você confirmar o envio.
-
-                </small>
-
-            </div>
-
+            <small class="disclaimer">
+              Seu pedido será registrado no sistema e depois aberto no WhatsApp
+              para você confirmar o envio.
+            </small>
+          </div>
         </div>
+      </section>
 
-    </section>
-
-
-    <!-- =====================================================
+      <!-- =====================================================
          INFORMAÇÕES ADICIONAIS
     ====================================================== -->
 
-    <section
-        id="sobre"
-        class="info"
-    >
-
-
+      <section id="sobre" class="info">
         <!-- ENTREGAS -->
 
         <div>
+          <span> 🚚 </span>
 
-            <span>
-                🚚
-            </span>
+          <h3>Entregas</h3>
 
-            <h3>
-                Entregas
-            </h3>
+          <p>
+            Tambaú e
+            <br />
+            Santa Cruz das Palmeiras
+          </p>
 
-            <p>
-                Tambaú e
-                <br>
-                Santa Cruz das Palmeiras
-            </p>
-
-            <small>
-                Taxa de entrega: R$ 5,00
-            </small>
-
+          <small> Taxa de entrega: R$ 5,00 </small>
         </div>
-
 
         <!-- HORÁRIO -->
 
         <div id="entregas">
+          <span> 🕒 </span>
 
-            <span>
-                🕒
-            </span>
+          <h3>Horário de atendimento</h3>
 
-            <h3>
-                Horário de atendimento
-            </h3>
-
-            <p>
-                Todos os dias
-                <br>
-                Das 13h às 22h
-            </p>
-
+          <p>
+            Todos os dias
+            <br />
+            Das 13h às 22h
+          </p>
         </div>
-
 
         <!-- DEPOIMENTOS -->
 
         <div>
+          <span> ⭐ </span>
 
-            <span>
-                ⭐
-            </span>
+          <h3>Depoimentos</h3>
 
-            <h3>
-                Depoimentos
-            </h3>
+          <blockquote>
+            “Geladinho maravilhoso!
+            <br />
+            Sempre peço e nunca decepciona.
+            <br />
+            Super recomendo!”
 
-            <blockquote>
+            <br />
 
-                “Geladinho maravilhoso!
-                <br>
-                Sempre peço e nunca decepciona.
-                <br>
-                Super recomendo!”
-
-                <br>
-
-                <small>
-                    — Cliente
-                </small>
-
-            </blockquote>
-
+            <small> — Cliente </small>
+          </blockquote>
         </div>
+      </section>
+    </main>
 
-    </section>
-
-</main>
-
-
-<!-- =====================================================
+    <!-- =====================================================
      RODAPÉ
 ====================================================== -->
 
-<footer>
+    <footer>
+      <img src="imagens/logo.jpeg" alt="Logo Gela Gourmet" />
 
-    <img
-        src="imagens/logo.jpeg"
-        alt="Logo Gela Gourmet"
-    >
+      <span>
+        Gela Gourmet ♡ &nbsp; Mais que geladinhos, é felicidade em forma de
+        sabor!
+      </span>
+    </footer>
 
-    <span>
-        Gela Gourmet ♡
-        &nbsp;
-        Mais que geladinhos, é felicidade em forma de sabor!
-    </span>
-
-</footer>
-
-
-<!-- =====================================================
+    <!-- =====================================================
      SUPABASE
      
      IMPORTANTE:
      O Supabase precisa ser carregado ANTES do script.js.
 ====================================================== -->
 
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 
+    <!-- SCRIPT PRINCIPAL -->
 
-<!-- SCRIPT PRINCIPAL -->
-
-<script src="script.js"></script>
-```
-
-</body>
-
+    <script src="script.js"></script>
+    ```
+  </body>
 </html>

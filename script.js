@@ -12,10 +12,11 @@ const SUPABASE_URL =
 const SUPABASE_KEY =
   "sb_publishable_6qSFWsLKbBxwYEE_N_yU3A_d-vOpHv9";
 
-const supabaseClient = window.supabase.createClient(
-  SUPABASE_URL,
-  SUPABASE_KEY
-);
+const supabaseClient =
+  window.supabase.createClient(
+    SUPABASE_URL,
+    SUPABASE_KEY
+  );
 
 // =========================================================
 // CONFIGURAÇÕES
@@ -63,10 +64,13 @@ const totalElement =
 // =========================================================
 
 function money(value) {
-  return Number(value || 0).toLocaleString("pt-BR", {
-    style: "currency",
-    currency: "BRL"
-  });
+  return Number(value || 0).toLocaleString(
+    "pt-BR",
+    {
+      style: "currency",
+      currency: "BRL"
+    }
+  );
 }
 
 // =========================================================
@@ -91,9 +95,11 @@ async function loadProducts() {
   console.log("🍓 Carregando produtos...");
 
   if (!productsContainer) {
+
     console.error(
       "ERRO: elemento #products não existe no index.html."
     );
+
     return;
   }
 
@@ -112,7 +118,9 @@ async function loadProducts() {
     const { data, error } =
       await supabaseClient
         .from("produtos")
-        .select("id, nome, preco, imagem, disponivel")
+        .select(
+          "id, nome, preco, imagem, disponivel"
+        )
         .order("id", {
           ascending: true
         });
@@ -130,6 +138,7 @@ async function loadProducts() {
           text-align: center;
           padding: 40px 20px;
         ">
+
           <h3>
             Não foi possível carregar os sabores 😔
           </h3>
@@ -151,6 +160,7 @@ async function loadProducts() {
           >
             Tentar novamente
           </button>
+
         </div>
       `;
 
@@ -173,6 +183,7 @@ async function loadProducts() {
           text-align: center;
           padding: 40px 20px;
         ">
+
           <h3>
             Nenhum produto encontrado 🍦
           </h3>
@@ -181,6 +192,7 @@ async function loadProducts() {
             Cadastre os sabores na tabela
             <strong>produtos</strong> do Supabase.
           </p>
+
         </div>
       `;
 
@@ -210,19 +222,12 @@ async function loadProducts() {
       products
     );
 
-    // Criar carrinho
-
-    cart = Array(products.length).fill(0);
-
-    // Mostrar produtos
+    cart =
+      Array(products.length).fill(0);
 
     renderProducts();
 
-    // Mostrar carrinho
-
     renderCart();
-
-    // Atualizar total
 
     updateTotal();
 
@@ -279,101 +284,103 @@ function renderProducts() {
 
   productsContainer.innerHTML = "";
 
-  products.forEach(function(product, index) {
+  products.forEach(
+    function(product, index) {
 
-    let imagem = product.img || "";
+      let imagem =
+        product.img || "";
 
-    // Corrige automaticamente o caminho da imagem
+      if (
+        imagem &&
+        !imagem.startsWith("http") &&
+        !imagem.startsWith("/") &&
+        !imagem.startsWith("imagens/")
+      ) {
+        imagem =
+          "imagens/" + imagem;
+      }
 
-    if (
-      imagem &&
-      !imagem.startsWith("http") &&
-      !imagem.startsWith("/") &&
-      !imagem.startsWith("imagens/")
-    ) {
-      imagem = "imagens/" + imagem;
-    }
+      const card =
+        document.createElement("div");
 
-    const card =
-      document.createElement("div");
+      card.className = "card";
 
-    card.className = "card";
+      if (product.disponivel) {
 
-    if (product.disponivel) {
+        card.innerHTML = `
+          <img
+            class="card-photo"
+            src="${escapeHtml(imagem)}"
+            alt="${escapeHtml(product.name)}"
+            onerror="this.style.display='none';"
+          >
 
-      card.innerHTML = `
-        <img
-          class="card-photo"
-          src="${escapeHtml(imagem)}"
-          alt="${escapeHtml(product.name)}"
-          onerror="this.style.display='none';"
-        >
+          <div class="card-body">
 
-        <div class="card-body">
+            <h3>
+              ${escapeHtml(product.name)}
+            </h3>
 
-          <h3>
-            ${escapeHtml(product.name)}
-          </h3>
+            <strong>
+              ${money(product.price)}
+            </strong>
 
-          <strong>
-            ${money(product.price)}
-          </strong>
+            <div class="qty">
 
-          <div class="qty">
+              <button
+                type="button"
+                onclick="changeQuantity(${index}, -1)"
+              >
+                −
+              </button>
 
-            <button
-              type="button"
-              onclick="changeQuantity(${index}, -1)"
-            >
-              −
-            </button>
+              <span id="quantity-${index}">
+                ${cart[index] || 0}
+              </span>
 
-            <span id="quantity-${index}">
-              ${cart[index] || 0}
-            </span>
+              <button
+                type="button"
+                onclick="changeQuantity(${index}, 1)"
+              >
+                +
+              </button>
 
-            <button
-              type="button"
-              onclick="changeQuantity(${index}, 1)"
-            >
-              +
-            </button>
+            </div>
 
           </div>
+        `;
 
-        </div>
-      `;
+      } else {
 
-    } else {
+        card.innerHTML = `
+          <img
+            class="card-photo"
+            src="${escapeHtml(imagem)}"
+            alt="${escapeHtml(product.name)}"
+            onerror="this.style.display='none';"
+          >
 
-      card.innerHTML = `
-        <img
-          class="card-photo"
-          src="${escapeHtml(imagem)}"
-          alt="${escapeHtml(product.name)}"
-          onerror="this.style.display='none';"
-        >
+          <div class="card-body">
 
-        <div class="card-body">
+            <h3>
+              ${escapeHtml(product.name)}
+            </h3>
 
-          <h3>
-            ${escapeHtml(product.name)}
-          </h3>
+            <strong>
+              ${money(product.price)}
+            </strong>
 
-          <strong>
-            ${money(product.price)}
-          </strong>
+            <div class="indisponivel">
+              Indisponível
+            </div>
 
-          <div class="indisponivel">
-            Indisponível
           </div>
+        `;
+      }
 
-        </div>
-      `;
+      productsContainer.appendChild(card);
     }
-
-    productsContainer.appendChild(card);
-  });
+  );
 }
 
 // =========================================================
@@ -404,7 +411,7 @@ function changeQuantity(index, amount) {
 }
 
 // =========================================================
-// ATUALIZAR QUANTIDADE NA TELA
+// ATUALIZAR QUANTIDADE
 // =========================================================
 
 function updateQuantityDisplay(index) {
@@ -415,7 +422,8 @@ function updateQuantityDisplay(index) {
     );
 
   if (element) {
-    element.textContent = cart[index];
+    element.textContent =
+      cart[index];
   }
 }
 
@@ -497,13 +505,16 @@ function getSelectedProducts() {
 function getSubtotal() {
 
   return getSelectedProducts()
-    .reduce(function(total, item) {
+    .reduce(
+      function(total, item) {
 
-      return total +
-        item.product.price *
-        item.quantity;
+        return total +
+          item.product.price *
+          item.quantity;
 
-    }, 0);
+      },
+      0
+    );
 }
 
 // =========================================================
@@ -525,7 +536,7 @@ function getOrderType() {
 }
 
 // =========================================================
-// TAXA DE ENTREGA
+// TAXA
 // =========================================================
 
 function getDeliveryFee() {
@@ -575,38 +586,42 @@ function renderCart() {
 
   cartContainer.innerHTML = "";
 
-  selected.forEach(function(item) {
+  selected.forEach(
+    function(item) {
 
-    const cartItem =
-      document.createElement("div");
+      const cartItem =
+        document.createElement("div");
 
-    cartItem.className =
-      "cart-item";
+      cartItem.className =
+        "cart-item";
 
-    const subtotal =
-      item.product.price *
-      item.quantity;
+      const subtotal =
+        item.product.price *
+        item.quantity;
 
-    cartItem.innerHTML = `
-      <div class="cart-item-info">
+      cartItem.innerHTML = `
+        <div class="cart-item-info">
 
-        <strong>
-          ${escapeHtml(item.product.name)}
-        </strong>
+          <strong>
+            ${escapeHtml(item.product.name)}
+          </strong>
 
-      </div>
+        </div>
 
-      <div class="cart-item-total">
+        <div class="cart-item-total">
 
-        <strong>
-          ${money(subtotal)}
-        </strong>
+          <strong>
+            ${money(subtotal)}
+          </strong>
 
-      </div>
-    `;
+        </div>
+      `;
 
-    cartContainer.appendChild(cartItem);
-  });
+      cartContainer.appendChild(
+        cartItem
+      );
+    }
+  );
 }
 
 // =========================================================
@@ -625,29 +640,23 @@ function updateTotal() {
     subtotal + delivery;
 
   if (subtotalElement) {
-
     subtotalElement.textContent =
       money(subtotal);
-
   }
 
   if (deliveryElement) {
-
     deliveryElement.textContent =
       money(delivery);
-
   }
 
   if (totalElement) {
-
     totalElement.textContent =
       money(total);
-
   }
 }
 
 // =========================================================
-// ENCONTRAR ÁREA DO ENDEREÇO
+// ÁREA DO ENDEREÇO
 // =========================================================
 
 function getAddressContainer() {
@@ -662,7 +671,9 @@ function getAddressContainer() {
     document.getElementById("number");
 
   const neighborhood =
-    document.getElementById("neighborhood");
+    document.getElementById(
+      "neighborhood"
+    );
 
   const fields = [
     city,
@@ -693,11 +704,13 @@ function getAddressContainer() {
   ) {
 
     const containsAll =
-      fields.every(function(field) {
+      fields.every(
+        function(field) {
 
-        return parent.contains(field);
+          return parent.contains(field);
 
-      });
+        }
+      );
 
     if (containsAll) {
       return parent;
@@ -729,7 +742,9 @@ function updateAddressVisibility() {
     document.getElementById("number");
 
   const neighborhood =
-    document.getElementById("neighborhood");
+    document.getElementById(
+      "neighborhood"
+    );
 
   const fields = [
     city,
@@ -743,10 +758,6 @@ function updateAddressVisibility() {
 
   if (type === "pickup") {
 
-    // =====================================================
-    // RETIRADA
-    // =====================================================
-
     if (addressContainer) {
 
       addressContainer.style.display =
@@ -754,27 +765,35 @@ function updateAddressVisibility() {
 
     } else {
 
-      fields.forEach(function(field) {
+      fields.forEach(
+        function(field) {
 
-        field.style.display = "none";
-        field.disabled = true;
-        field.value = "";
+          field.style.display =
+            "none";
 
-      });
+          field.disabled =
+            true;
+
+          field.value =
+            "";
+
+        }
+      );
     }
 
-    fields.forEach(function(field) {
+    fields.forEach(
+      function(field) {
 
-      field.disabled = true;
-      field.value = "";
+        field.disabled =
+          true;
 
-    });
+        field.value =
+          "";
+
+      }
+    );
 
   } else {
-
-    // =====================================================
-    // ENTREGA
-    // =====================================================
 
     if (addressContainer) {
 
@@ -783,18 +802,24 @@ function updateAddressVisibility() {
 
     } else {
 
-      fields.forEach(function(field) {
+      fields.forEach(
+        function(field) {
 
-        field.style.display = "";
+          field.style.display =
+            "";
 
-      });
+        }
+      );
     }
 
-    fields.forEach(function(field) {
+    fields.forEach(
+      function(field) {
 
-      field.disabled = false;
+        field.disabled =
+          false;
 
-    });
+      }
+    );
 
     if (street) {
 
@@ -876,11 +901,13 @@ function getAddress() {
       : ""
 
   ]
-    .filter(function(value) {
+    .filter(
+      function(value) {
 
-      return value !== "";
+        return value !== "";
 
-    })
+      }
+    )
     .join(", ");
 }
 
@@ -1003,10 +1030,6 @@ function validateOrder() {
     return false;
   }
 
-  // =====================================================
-  // VALIDAR ENDEREÇO SOMENTE NA ENTREGA
-  // =====================================================
-
   if (
     getOrderType() === "delivery"
   ) {
@@ -1069,11 +1092,521 @@ function paymentLabel(payment) {
 }
 
 // =========================================================
-// MENSAGEM BONITA DE SUCESSO
+// STATUS DO PEDIDO
+// =========================================================
+
+function getStatusPedidoInfo(status) {
+
+  const statusInfo = {
+
+    pendente: {
+      titulo: "Pedido recebido! 💗",
+      mensagem:
+        "Seu pedido foi recebido e está aguardando confirmação.",
+      icone: "🕐"
+    },
+
+    preparo: {
+      titulo:
+        "Seu pedido está sendo preparado! 🍓",
+      mensagem:
+        "Já começamos a preparar seus geladinhos. Em breve estará prontinho!",
+      icone: "👩‍🍳"
+    },
+
+    entrega: {
+      titulo:
+        "Seu pedido saiu para entrega! 🛵",
+      mensagem:
+        "Seu pedido já está a caminho. Fique de olho porque ele chegará em breve!",
+      icone: "🛵"
+    },
+
+    entregue: {
+      titulo:
+        "Pedido entregue! 💕",
+      mensagem:
+        "Seu pedido foi entregue. Esperamos que você aproveite muito!",
+      icone: "💗"
+    },
+
+    cancelado: {
+      titulo:
+        "Pedido cancelado 😔",
+      mensagem:
+        "Infelizmente, seu pedido foi cancelado. Entre em contato com a Gela Gourmet se precisar de ajuda.",
+      icone: "❌"
+    }
+
+  };
+
+  return (
+    statusInfo[status] || {
+      titulo: "Status atualizado",
+      mensagem:
+        "Seu pedido teve uma atualização.",
+      icone: "📦"
+    }
+  );
+}
+
+// =========================================================
+// SALVAR PEDIDO
+// =========================================================
+
+function salvarPedidoAcompanhado(
+  pedidoId,
+  telefone,
+  status,
+  token
+) {
+
+  const dados = {
+
+    pedidoId:
+      pedidoId,
+
+    telefone:
+      telefone,
+
+    status:
+      status || "pendente",
+
+    token:
+      token || null,
+
+    salvoEm:
+      Date.now()
+
+  };
+
+  localStorage.setItem(
+    "gelaGourmetPedido",
+    JSON.stringify(dados)
+  );
+
+  pedidoAcompanhado =
+    dados;
+
+  statusAnteriorPedido =
+    dados.status;
+}
+
+// =========================================================
+// RECUPERAR PEDIDO
+// =========================================================
+
+function recuperarPedidoAcompanhado() {
+
+  try {
+
+    const salvo =
+      localStorage.getItem(
+        "gelaGourmetPedido"
+      );
+
+    if (!salvo) {
+      return null;
+    }
+
+    const dados =
+      JSON.parse(salvo);
+
+    if (
+      !dados ||
+      !dados.pedidoId
+    ) {
+      return null;
+    }
+
+    return dados;
+
+  } catch (error) {
+
+    console.error(
+      "Erro ao recuperar pedido:",
+      error
+    );
+
+    return null;
+  }
+}
+
+// =========================================================
+// CONSULTAR STATUS
+// =========================================================
+
+async function consultarStatusPedido() {
+
+  if (!pedidoAcompanhado) {
+    return;
+  }
+
+  if (
+    !pedidoAcompanhado.telefone
+  ) {
+    return;
+  }
+
+  try {
+
+    const result =
+      await supabaseClient.rpc(
+        "consultar_status_pedido",
+        {
+          p_pedido_id:
+            pedidoAcompanhado.pedidoId,
+
+          p_telefone:
+            pedidoAcompanhado.telefone
+        }
+      );
+
+    if (result.error) {
+
+      console.error(
+        "Erro ao consultar status:",
+        result.error
+      );
+
+      return;
+    }
+
+    const dados =
+      result.data;
+
+    if (
+      !dados ||
+      !Array.isArray(dados) ||
+      dados.length === 0
+    ) {
+      return;
+    }
+
+    const novoStatus =
+      dados[0].status;
+
+    if (
+      statusAnteriorPedido &&
+      novoStatus !==
+        statusAnteriorPedido
+    ) {
+
+      mostrarAtualizacaoStatus(
+        novoStatus
+      );
+    }
+
+    statusAnteriorPedido =
+      novoStatus;
+
+    pedidoAcompanhado.status =
+      novoStatus;
+
+    localStorage.setItem(
+      "gelaGourmetPedido",
+      JSON.stringify(
+        pedidoAcompanhado
+      )
+    );
+
+  } catch (error) {
+
+    console.error(
+      "Erro ao acompanhar pedido:",
+      error
+    );
+  }
+}
+
+// =========================================================
+// INICIAR ACOMPANHAMENTO
+// =========================================================
+
+function iniciarAcompanhamentoPedido() {
+
+  if (!pedidoAcompanhado) {
+    return;
+  }
+
+  if (intervaloStatusPedido) {
+
+    clearInterval(
+      intervaloStatusPedido
+    );
+  }
+
+  consultarStatusPedido();
+
+  intervaloStatusPedido =
+    setInterval(
+      consultarStatusPedido,
+      10000
+    );
+}
+
+// =========================================================
+// PARAR ACOMPANHAMENTO
+// =========================================================
+
+function pararAcompanhamentoPedido() {
+
+  if (intervaloStatusPedido) {
+
+    clearInterval(
+      intervaloStatusPedido
+    );
+
+    intervaloStatusPedido =
+      null;
+  }
+}
+
+// =========================================================
+// ATUALIZAÇÃO DE STATUS
+// =========================================================
+
+function mostrarAtualizacaoStatus(
+  status
+) {
+
+  const info =
+    getStatusPedidoInfo(status);
+
+  const existente =
+    document.querySelector(
+      ".status-update-overlay"
+    );
+
+  if (existente) {
+    existente.remove();
+  }
+
+  const overlay =
+    document.createElement("div");
+
+  overlay.className =
+    "status-update-overlay";
+
+  overlay.innerHTML = `
+    <div class="status-update-modal">
+
+      <button
+        type="button"
+        class="status-update-close"
+        aria-label="Fechar"
+      >
+        ×
+      </button>
+
+      <div class="status-update-icon">
+        ${info.icone}
+      </div>
+
+      <span class="status-update-small">
+        ATUALIZAÇÃO DO PEDIDO
+      </span>
+
+      <h2>
+        ${escapeHtml(info.titulo)}
+      </h2>
+
+      <p>
+        ${escapeHtml(info.mensagem)}
+      </p>
+
+      <div class="status-update-number">
+
+        Pedido
+
+        <strong>
+          #${escapeHtml(
+            pedidoAcompanhado.pedidoId
+          )}
+        </strong>
+
+      </div>
+
+      <button
+        type="button"
+        class="status-update-button"
+        id="fecharStatusUpdate"
+      >
+        Entendi 💗
+      </button>
+
+    </div>
+  `;
+
+  document.body.appendChild(
+    overlay
+  );
+
+  document.body.style.overflow =
+    "hidden";
+
+  function fechar() {
+
+    overlay.remove();
+
+    document.body.style.overflow =
+      "";
+  }
+
+  const close =
+    overlay.querySelector(
+      ".status-update-close"
+    );
+
+  const button =
+    overlay.querySelector(
+      "#fecharStatusUpdate"
+    );
+
+  if (close) {
+
+    close.addEventListener(
+      "click",
+      fechar
+    );
+  }
+
+  if (button) {
+
+    button.addEventListener(
+      "click",
+      fechar
+    );
+  }
+
+  overlay.addEventListener(
+    "click",
+    function(event) {
+
+      if (
+        event.target === overlay
+      ) {
+        fechar();
+      }
+
+    }
+  );
+}
+
+// =========================================================
+// MOSTRAR PEDIDO EM ANDAMENTO
+// =========================================================
+
+function mostrarPedidoEmAndamento() {
+
+  if (!pedidoAcompanhado) {
+    return;
+  }
+
+  const existente =
+    document.querySelector(
+      ".pedido-acompanhamento"
+    );
+
+  if (existente) {
+    existente.remove();
+  }
+
+  const info =
+    getStatusPedidoInfo(
+      pedidoAcompanhado.status ||
+        "pendente"
+    );
+
+  const acompanhamento =
+    document.createElement("div");
+
+  acompanhamento.className =
+    "pedido-acompanhamento";
+
+  acompanhamento.innerHTML = `
+    <div class="pedido-acompanhamento-icon">
+      ${info.icone}
+    </div>
+
+    <div class="pedido-acompanhamento-info">
+
+      <span>
+        PEDIDO #${escapeHtml(
+          pedidoAcompanhado.pedidoId
+        )}
+      </span>
+
+      <strong>
+        ${escapeHtml(info.titulo)}
+      </strong>
+
+      <small>
+        ${escapeHtml(info.mensagem)}
+      </small>
+
+    </div>
+
+    <button
+      type="button"
+      id="fecharAcompanhamento"
+      aria-label="Fechar acompanhamento"
+    >
+      ×
+    </button>
+  `;
+
+  document.body.appendChild(
+    acompanhamento
+  );
+
+  const fechar =
+    acompanhamento.querySelector(
+      "#fecharAcompanhamento"
+    );
+
+  if (fechar) {
+
+    fechar.addEventListener(
+      "click",
+      function() {
+
+        acompanhamento.remove();
+
+      }
+    );
+  }
+}
+
+// =========================================================
+// VERIFICAR PEDIDO SALVO
+// =========================================================
+
+function verificarPedidoSalvo() {
+
+  const pedido =
+    recuperarPedidoAcompanhado();
+
+  if (!pedido) {
+    return;
+  }
+
+  pedidoAcompanhado =
+    pedido;
+
+  statusAnteriorPedido =
+    pedido.status || null;
+
+  iniciarAcompanhamentoPedido();
+}
+
+// =========================================================
+// MODAL DE SUCESSO
 // =========================================================
 
 function mostrarPedidoSucesso(
   pedidoId,
+  token,
   itens,
   total,
   whatsappUrl
@@ -1143,15 +1676,13 @@ function mostrarPedidoSucesso(
         </span>
 
         <strong>
-          #${pedidoId}
+          #${escapeHtml(pedidoId)}
         </strong>
 
       </div>
 
       <div class="success-items">
-
         ${itensHtml}
-
       </div>
 
       <div class="success-total">
@@ -1170,10 +1701,18 @@ function mostrarPedidoSucesso(
 
         <button
           type="button"
+          class="success-track"
+          id="successTrack"
+        >
+          Acompanhar pedido
+        </button>
+
+        <button
+          type="button"
           class="success-whatsapp"
           id="successWhatsapp"
         >
-          💬 Enviar pedido pelo WhatsApp
+          Enviar pedido pelo WhatsApp
         </button>
 
         <button
@@ -1189,13 +1728,15 @@ function mostrarPedidoSucesso(
     </div>
   `;
 
-  document.body.appendChild(modal);
+  document.body.appendChild(
+    modal
+  );
 
   document.body.style.overflow =
     "hidden";
 
   // =====================================================
-  // FECHAR
+  // FECHAR MODAL
   // =====================================================
 
   function fecharModal() {
@@ -1204,7 +1745,6 @@ function mostrarPedidoSucesso(
 
     document.body.style.overflow =
       "";
-
   }
 
   const closeButton =
@@ -1218,7 +1758,6 @@ function mostrarPedidoSucesso(
       "click",
       fecharModal
     );
-
   }
 
   const homeButton =
@@ -1232,7 +1771,6 @@ function mostrarPedidoSucesso(
       "click",
       fecharModal
     );
-
   }
 
   modal.addEventListener(
@@ -1244,11 +1782,64 @@ function mostrarPedidoSucesso(
       ) {
 
         fecharModal();
-
       }
 
     }
   );
+
+  // =====================================================
+  // ACOMPANHAR PEDIDO
+  // =====================================================
+
+  const trackButton =
+    modal.querySelector(
+      "#successTrack"
+    );
+
+  if (trackButton) {
+
+    trackButton.addEventListener(
+      "click",
+      function() {
+
+        if (!token) {
+
+          alert(
+            "O pedido foi criado, mas o banco não retornou o código de acompanhamento."
+          );
+
+          console.error(
+            "Token do pedido não encontrado."
+          );
+
+          return;
+        }
+
+        const dados = {
+
+          pedidoId:
+            pedidoId,
+
+          token:
+            token,
+
+          salvoEm:
+            Date.now()
+
+        };
+
+        localStorage.setItem(
+          "gelaGourmetPedido",
+          JSON.stringify(dados)
+        );
+
+        window.location.href =
+          "acompanhar-pedido.html?token=" +
+          encodeURIComponent(token);
+
+      }
+    );
+  }
 
   // =====================================================
   // WHATSAPP
@@ -1272,453 +1863,12 @@ function mostrarPedidoSucesso(
 
       }
     );
-
   }
 }
 
 // =========================================================
 // CRIAR PEDIDO
 // =========================================================
-// =========================================================
-// CONFIGURAÇÃO DOS STATUS
-// =========================================================
-
-function getStatusPedidoInfo(status) {
-  const statusInfo = {
-    pendente: {
-      titulo: "Pedido recebido! 💗",
-      mensagem:
-        "Seu pedido foi recebido e está aguardando confirmação.",
-      icone: "🕐"
-    },
-
-    preparo: {
-      titulo: "Seu pedido está sendo preparado! 🍓",
-      mensagem:
-        "Já começamos a preparar seus geladinhos. Em breve estará prontinho!",
-      icone: "👩‍🍳"
-    },
-
-    entrega: {
-      titulo: "Seu pedido saiu para entrega! 🛵",
-      mensagem:
-        "Seu pedido já está a caminho. Fique de olho porque ele chegará em breve!",
-      icone: "🛵"
-    },
-
-    entregue: {
-      titulo: "Pedido entregue! 💕",
-      mensagem:
-        "Seu pedido foi entregue. Esperamos que você aproveite muito!",
-      icone: "💗"
-    },
-
-    cancelado: {
-      titulo: "Pedido cancelado 😔",
-      mensagem:
-        "Infelizmente, seu pedido foi cancelado. Entre em contato com a Gela Gourmet se precisar de ajuda.",
-      icone: "❌"
-    }
-  };
-
-  return (
-    statusInfo[status] || {
-      titulo: "Status atualizado",
-      mensagem:
-        "Seu pedido teve uma atualização.",
-      icone: "📦"
-    }
-  );
-}
-
-// =========================================================
-// SALVAR PEDIDO PARA ACOMPANHAMENTO
-// =========================================================
-
-function salvarPedidoAcompanhado(
-  pedidoId,
-  telefone,
-  status
-) {
-  const dados = {
-    pedidoId: pedidoId,
-    telefone: telefone,
-    status: status,
-    salvoEm: Date.now()
-  };
-
-  localStorage.setItem(
-    "gelaGourmetPedido",
-    JSON.stringify(dados)
-  );
-
-  pedidoAcompanhado = dados;
-  statusAnteriorPedido = status;
-}
-
-// =========================================================
-// RECUPERAR PEDIDO SALVO
-// =========================================================
-
-function recuperarPedidoAcompanhado() {
-  try {
-    const salvo =
-      localStorage.getItem(
-        "gelaGourmetPedido"
-      );
-
-    if (!salvo) {
-      return null;
-    }
-
-    const dados = JSON.parse(salvo);
-
-    if (
-      !dados ||
-      !dados.pedidoId ||
-      !dados.telefone
-    ) {
-      return null;
-    }
-
-    return dados;
-  } catch (error) {
-    console.error(
-      "Erro ao recuperar pedido:",
-      error
-    );
-
-    return null;
-  }
-}
-
-// =========================================================
-// CONSULTAR STATUS DO PEDIDO
-// =========================================================
-
-async function consultarStatusPedido() {
-  if (!pedidoAcompanhado) {
-    return;
-  }
-
-  try {
-    const result =
-      await supabaseClient.rpc(
-        "consultar_status_pedido",
-        {
-          p_pedido_id:
-            pedidoAcompanhado.pedidoId,
-
-          p_telefone:
-            pedidoAcompanhado.telefone
-        }
-      );
-
-    if (result.error) {
-      console.error(
-        "Erro ao consultar status:",
-        result.error
-      );
-      return;
-    }
-
-    const dados = result.data;
-
-    if (
-      !dados ||
-      dados.length === 0
-    ) {
-      return;
-    }
-
-    const novoStatus =
-      dados[0].status;
-
-    if (
-      statusAnteriorPedido &&
-      novoStatus !==
-        statusAnteriorPedido
-    ) {
-      mostrarAtualizacaoStatus(
-        novoStatus
-      );
-    }
-
-    statusAnteriorPedido =
-      novoStatus;
-
-    pedidoAcompanhado.status =
-      novoStatus;
-
-    localStorage.setItem(
-      "gelaGourmetPedido",
-      JSON.stringify(
-        pedidoAcompanhado
-      )
-    );
-  } catch (error) {
-    console.error(
-      "Erro ao acompanhar pedido:",
-      error
-    );
-  }
-}
-
-// =========================================================
-// INICIAR ACOMPANHAMENTO
-// =========================================================
-
-function iniciarAcompanhamentoPedido() {
-  if (!pedidoAcompanhado) {
-    return;
-  }
-
-  if (intervaloStatusPedido) {
-    clearInterval(
-      intervaloStatusPedido
-    );
-  }
-
-  consultarStatusPedido();
-
-  intervaloStatusPedido =
-    setInterval(
-      consultarStatusPedido,
-      10000
-    );
-}
-
-// =========================================================
-// PARAR ACOMPANHAMENTO
-// =========================================================
-
-function pararAcompanhamentoPedido() {
-  if (intervaloStatusPedido) {
-    clearInterval(
-      intervaloStatusPedido
-    );
-
-    intervaloStatusPedido = null;
-  }
-}
-
-// =========================================================
-// MOSTRAR ATUALIZAÇÃO DE STATUS
-// =========================================================
-
-function mostrarAtualizacaoStatus(
-  status
-) {
-  const info =
-    getStatusPedidoInfo(status);
-
-  const existente =
-    document.querySelector(
-      ".status-update-overlay"
-    );
-
-  if (existente) {
-    existente.remove();
-  }
-
-  const overlay =
-    document.createElement("div");
-
-  overlay.className =
-    "status-update-overlay";
-
-  overlay.innerHTML = `
-    <div class="status-update-modal">
-
-      <button
-        type="button"
-        class="status-update-close"
-        aria-label="Fechar"
-      >
-        ×
-      </button>
-
-      <div class="status-update-icon">
-        ${info.icone}
-      </div>
-
-      <span class="status-update-small">
-        ATUALIZAÇÃO DO PEDIDO
-      </span>
-
-      <h2>
-        ${escapeHtml(info.titulo)}
-      </h2>
-
-      <p>
-        ${escapeHtml(info.mensagem)}
-      </p>
-
-      <div class="status-update-number">
-        Pedido
-        <strong>
-          #${pedidoAcompanhado.pedidoId}
-        </strong>
-      </div>
-
-      <button
-        type="button"
-        class="status-update-button"
-        id="fecharStatusUpdate"
-      >
-        Entendi 💗
-      </button>
-
-    </div>
-  `;
-
-  document.body.appendChild(
-    overlay
-  );
-
-  document.body.style.overflow =
-    "hidden";
-
-  function fechar() {
-    overlay.remove();
-
-    document.body.style.overflow =
-      "";
-  }
-
-  const close =
-    overlay.querySelector(
-      ".status-update-close"
-    );
-
-  const button =
-    overlay.querySelector(
-      "#fecharStatusUpdate"
-    );
-
-  if (close) {
-    close.addEventListener(
-      "click",
-      fechar
-    );
-  }
-
-  if (button) {
-    button.addEventListener(
-      "click",
-      fechar
-    );
-  }
-
-  overlay.addEventListener(
-    "click",
-    function(event) {
-      if (
-        event.target === overlay
-      ) {
-        fechar();
-      }
-    }
-  );
-}
-
-// =========================================================
-// MOSTRAR PEDIDO SENDO ACOMPANHADO
-// =========================================================
-
-function mostrarPedidoEmAndamento() {
-  if (!pedidoAcompanhado) {
-    return;
-  }
-
-  const existente =
-    document.querySelector(
-      ".pedido-acompanhamento"
-    );
-
-  if (existente) {
-    existente.remove();
-  }
-
-  const info =
-    getStatusPedidoInfo(
-      pedidoAcompanhado.status ||
-        "pendente"
-    );
-
-  const acompanhamento =
-    document.createElement("div");
-
-  acompanhamento.className =
-    "pedido-acompanhamento";
-
-  acompanhamento.innerHTML = `
-    <div class="pedido-acompanhamento-icon">
-      ${info.icone}
-    </div>
-
-    <div class="pedido-acompanhamento-info">
-      <span>
-        PEDIDO #${pedidoAcompanhado.pedidoId}
-      </span>
-
-      <strong>
-        ${escapeHtml(info.titulo)}
-      </strong>
-
-      <small>
-        ${escapeHtml(info.mensagem)}
-      </small>
-    </div>
-
-    <button
-      type="button"
-      id="fecharAcompanhamento"
-      aria-label="Fechar acompanhamento"
-    >
-      ×
-    </button>
-  `;
-
-  document.body.appendChild(
-    acompanhamento
-  );
-
-  const fechar =
-    acompanhamento.querySelector(
-      "#fecharAcompanhamento"
-    );
-
-  if (fechar) {
-    fechar.addEventListener(
-      "click",
-      function() {
-        acompanhamento.remove();
-      }
-    );
-  }
-}
-
-// =========================================================
-// VERIFICAR PEDIDO SALVO
-// =========================================================
-
-function verificarPedidoSalvo() {
-  const pedido =
-    recuperarPedidoAcompanhado();
-
-  if (!pedido) {
-    return;
-  }
-
-  pedidoAcompanhado =
-    pedido;
-
-  statusAnteriorPedido =
-    pedido.status || null;
-
-  iniciarAcompanhamentoPedido();
-}
 
 async function createOrder() {
 
@@ -1738,11 +1888,11 @@ async function createOrder() {
 
   if (button) {
 
-    button.disabled = true;
+    button.disabled =
+      true;
 
     button.innerHTML =
       "⏳ Registrando pedido...";
-
   }
 
   try {
@@ -1768,13 +1918,19 @@ async function createOrder() {
       );
 
     const name =
-      nameInput.value.trim();
+      nameInput
+        ? nameInput.value.trim()
+        : "";
 
     const phone =
-      phoneInput.value.trim();
+      phoneInput
+        ? phoneInput.value.trim()
+        : "";
 
     const payment =
-      paymentInput.value;
+      paymentInput
+        ? paymentInput.value
+        : "";
 
     const note =
       noteInput
@@ -1802,7 +1958,6 @@ async function createOrder() {
       address +=
         " | Observação: " +
         note;
-
     }
 
     console.log(
@@ -1810,7 +1965,7 @@ async function createOrder() {
     );
 
     // =====================================================
-    // SALVAR NO SUPABASE
+    // CRIAR PEDIDO NO SUPABASE
     // =====================================================
 
     const result =
@@ -1842,26 +1997,129 @@ async function createOrder() {
         }
       );
 
-    const pedidoId =
-      result.data;
+    // =====================================================
+    // VERIFICAR ERRO
+    // =====================================================
 
-    const error =
-      result.error;
-
-    if (error) {
+    if (result.error) {
 
       console.error(
         "❌ Erro ao criar pedido:",
-        error
+        result.error
       );
 
-      throw error;
+      throw result.error;
+    }
+
+    // =====================================================
+    // PEGAR DADOS RETORNADOS PELO RPC
+    // =====================================================
+
+    console.log(
+      "📦 Resposta completa do criar_pedido:",
+      result.data
+    );
+
+    let dadosPedido =
+      result.data;
+
+    // Caso o Supabase retorne array
+    if (
+      Array.isArray(dadosPedido)
+    ) {
+
+      dadosPedido =
+        dadosPedido[0];
+    }
+
+    let pedidoId =
+      null;
+
+    let token =
+      null;
+
+    if (
+      dadosPedido &&
+      typeof dadosPedido === "object"
+    ) {
+
+      pedidoId =
+        dadosPedido.id ||
+        dadosPedido.pedido_id ||
+        dadosPedido.id_pedido ||
+        null;
+
+      token =
+        dadosPedido.token ||
+        dadosPedido.pedido_token ||
+        null;
+
+    } else {
+
+      pedidoId =
+        dadosPedido;
     }
 
     console.log(
-      "✅ Pedido criado:",
+      "🆔 ID do pedido:",
       pedidoId
     );
+
+    console.log(
+      "🔑 Token do pedido:",
+      token
+    );
+
+    // =====================================================
+    // GARANTIR ID
+    // =====================================================
+
+    if (!pedidoId) {
+
+      console.error(
+        "❌ O Supabase não retornou o ID do pedido."
+      );
+
+      alert(
+        "O pedido foi criado, mas não foi possível obter o número do pedido."
+      );
+
+      return;
+    }
+
+    // =====================================================
+    // SALVAR PEDIDO LOCALMENTE
+    // =====================================================
+
+    const pedidoSalvo = {
+
+      pedidoId:
+        pedidoId,
+
+      telefone:
+        phone,
+
+      token:
+        token,
+
+      status:
+        "pendente",
+
+      salvoEm:
+        Date.now()
+
+    };
+
+    localStorage.setItem(
+      "gelaGourmetPedido",
+      JSON.stringify(pedidoSalvo)
+    );
+
+    pedidoAcompanhado =
+      pedidoSalvo;
+
+    statusAnteriorPedido =
+      "pendente";
 
     // =====================================================
     // WHATSAPP
@@ -1903,7 +2161,8 @@ async function createOrder() {
       }
     );
 
-    message += "\n";
+    message +=
+      "\n";
 
     message +=
       "🛍️ *Subtotal:* " +
@@ -1923,7 +2182,6 @@ async function createOrder() {
 
       message +=
         "🏪 *Retirada:* R$ 0,00\n";
-
     }
 
     message +=
@@ -1946,7 +2204,7 @@ async function createOrder() {
       "\n";
 
     // =====================================================
-    // ENDEREÇO SOMENTE PARA ENTREGA
+    // ENDEREÇO
     // =====================================================
 
     if (
@@ -1957,8 +2215,11 @@ async function createOrder() {
         "📍 *Endereço:* " +
         getAddress() +
         "\n";
-
     }
+
+    // =====================================================
+    // OBSERVAÇÃO
+    // =====================================================
 
     if (note) {
 
@@ -1966,7 +2227,6 @@ async function createOrder() {
         "\n📝 *Observação:* " +
         note +
         "\n";
-
     }
 
     message +=
@@ -1995,24 +2255,29 @@ async function createOrder() {
     // LIMPAR CAMPOS
     // =====================================================
 
-    nameInput.value = "";
+    if (nameInput) {
+      nameInput.value = "";
+    }
 
-    phoneInput.value = "";
+    if (phoneInput) {
+      phoneInput.value = "";
+    }
 
-    paymentInput.value = "";
+    if (paymentInput) {
+      paymentInput.value = "";
+    }
 
     if (noteInput) {
-
       noteInput.value = "";
-
     }
 
     // =====================================================
-    // MOSTRAR SUCESSO BONITO
+    // MOSTRAR SUCESSO
     // =====================================================
 
     mostrarPedidoSucesso(
       pedidoId,
+      token,
       itensPedido,
       total,
       whatsappUrl
@@ -2034,12 +2299,12 @@ async function createOrder() {
 
     if (button) {
 
-      button.disabled = false;
+      button.disabled =
+        false;
 
       button.innerHTML =
         originalText ||
         "📱 Finalizar pedido pelo WhatsApp";
-
     }
   }
 }
@@ -2127,7 +2392,6 @@ function setupPhoneMask() {
             0,
             11
           );
-
       }
 
       if (value.length <= 10) {
@@ -2145,12 +2409,10 @@ function setupPhoneMask() {
             /^(\d{2})(\d{5})(\d{0,4})$/,
             "($1) $2-$3"
           );
-
       }
 
       input.value =
         value;
-
     }
   );
 }
@@ -2187,7 +2449,6 @@ function setupCity() {
       if (
         getOrderType() === "pickup"
       ) {
-
         return;
       }
 
@@ -2208,7 +2469,6 @@ function setupCity() {
 
           street.placeholder =
             "Escolha a cidade primeiro...";
-
         }
       }
 
@@ -2226,7 +2486,6 @@ function setupCity() {
 
           neighborhood.placeholder =
             "Escolha a cidade primeiro...";
-
         }
       }
 
@@ -2261,4 +2520,60 @@ document.addEventListener(
     setupCity();
 
   }
+
+  
 );
+
+// =========================================================
+// ACOMPANHAR PEDIDO PELO INDEX
+// =========================================================
+
+document.addEventListener("DOMContentLoaded", function () {
+
+    const btnAcompanharPedido =
+        document.getElementById("btnAcompanharPedido");
+
+    if (!btnAcompanharPedido) {
+        return;
+    }
+
+    btnAcompanharPedido.addEventListener("click", function (event) {
+
+        event.preventDefault();
+
+        const pedidoSalvo =
+            localStorage.getItem("gelaGourmetPedido");
+
+        // Se já existe um pedido salvo
+        if (pedidoSalvo) {
+
+            try {
+
+                const pedido = JSON.parse(pedidoSalvo);
+
+                if (pedido.token) {
+
+                    window.location.href =
+                        "acompanhar-pedido.html?token=" +
+                        encodeURIComponent(pedido.token);
+
+                    return;
+                }
+
+            } catch (erro) {
+
+                console.error(
+                    "Erro ao recuperar pedido:",
+                    erro
+                );
+
+            }
+        }
+
+        // Caso não tenha pedido salvo
+        alert(
+            "Nenhum pedido recente foi encontrado neste dispositivo."
+        );
+    });
+
+});
