@@ -1,0 +1,996 @@
+/* =========================================================
+   GELA GOURMET - ACOMPANHAR PEDIDO
+   ========================================================= */
+
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    font-family:
+        Arial,
+        Helvetica,
+        sans-serif;
+
+    background:
+        linear-gradient(
+            135deg,
+            #fff8fa,
+            #fdf0f3
+        );
+
+    color: #5d4540;
+    min-height: 100vh;
+}
+
+
+/* =========================================================
+   PÁGINA
+   ========================================================= */
+
+.pagina {
+    width: 100%;
+    min-height: 100vh;
+
+    display: flex;
+    justify-content: center;
+
+    padding: 35px 15px;
+}
+
+.acompanhamento {
+    width: 100%;
+    max-width: 620px;
+}
+
+
+/* =========================================================
+   LOGO
+   ========================================================= */
+
+.logo-area {
+    text-align: center;
+    margin-bottom: 25px;
+}
+
+.logo-circle {
+    width: 64px;
+    height: 64px;
+
+    margin: 0 auto 12px;
+
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    border-radius: 50%;
+
+    background: #f8dfe7;
+
+    font-size: 30px;
+
+    box-shadow:
+        0 5px 18px
+        rgba(120, 70, 80, 0.08);
+}
+
+.logo-area h1 {
+    color: #684237;
+    font-size: 26px;
+    margin-bottom: 5px;
+}
+
+.logo-area p {
+    color: #a1817c;
+    font-size: 13px;
+}
+
+
+/* =========================================================
+   PEDIDO
+   ========================================================= */
+
+#pedido {
+    animation:
+        aparecer 0.35s ease;
+}
+
+@keyframes aparecer {
+
+    from {
+        opacity: 0;
+
+        transform:
+            translateY(10px);
+    }
+
+    to {
+        opacity: 1;
+
+        transform:
+            translateY(0);
+    }
+}
+
+
+/* =========================================================
+   CABEÇALHO
+   ========================================================= */
+
+.pedido-cabecalho {
+    background: #ffffff;
+
+    border: 1px solid #f0dfe3;
+
+    border-radius: 16px;
+
+    padding: 18px 20px;
+
+    display: flex;
+
+    align-items: center;
+
+    justify-content: space-between;
+
+    margin-bottom: 14px;
+
+    box-shadow:
+        0 5px 20px
+        rgba(90, 50, 60, 0.04);
+}
+
+.pedido-cabecalho span {
+    color: #a1817c;
+
+    font-size: 10px;
+
+    font-weight: 700;
+
+    letter-spacing: 1px;
+}
+
+.pedido-cabecalho strong {
+    color: #b45f70;
+
+    font-size: 22px;
+}
+
+
+/* =========================================================
+   SAUDAÇÃO
+   ========================================================= */
+
+.saudacao {
+    background: #ffffff;
+
+    border-radius: 16px;
+
+    padding: 20px;
+
+    margin-bottom: 14px;
+
+    border: 1px solid #f0dfe3;
+}
+
+.saudacao h2 {
+    color: #684237;
+
+    font-size: 20px;
+
+    margin-bottom: 6px;
+}
+
+.saudacao p {
+    color: #9b7f79;
+
+    font-size: 13px;
+}
+
+
+/* =========================================================
+   STATUS
+   ========================================================= */
+
+.status-box {
+    background: #ffffff;
+
+    border: 1px solid #f0dfe3;
+
+    border-radius: 16px;
+
+    padding: 22px;
+
+    margin-bottom: 14px;
+
+    box-shadow:
+        0 5px 20px
+        rgba(90, 50, 60, 0.04);
+}
+
+.status-titulo {
+    display: flex;
+
+    justify-content: space-between;
+
+    align-items: center;
+
+    gap: 15px;
+
+    margin-bottom: 28px;
+}
+
+.status-titulo span {
+    color: #92756f;
+
+    font-size: 12px;
+}
+
+.status-titulo strong {
+    color: #ad5d6d;
+
+    font-size: 14px;
+}
+
+
+/* =========================================================
+   PROGRESSO
+   ========================================================= */
+
+.progresso {
+    position: relative;
+
+    padding: 0 8px;
+}
+
+.linha-progresso {
+    position: absolute;
+
+    left: 9%;
+    right: 9%;
+
+    top: 19px;
+
+    height: 4px;
+
+    background: #eee1e4;
+
+    border-radius: 10px;
+
+    z-index: 1;
+}
+
+.progresso-ativo {
+    width: 0%;
+
+    height: 100%;
+
+    background:
+        linear-gradient(
+            90deg,
+            #d89aaa,
+            #b75d70
+        );
+
+    border-radius: 10px;
+
+    transition:
+        width 0.5s ease;
+}
+
+.etapas {
+    position: relative;
+
+    z-index: 2;
+
+    display: grid;
+
+    grid-template-columns:
+        repeat(4, 1fr);
+}
+
+.etapa {
+    display: flex;
+
+    flex-direction: column;
+
+    align-items: center;
+
+    gap: 8px;
+
+    color: #b29a96;
+
+    font-size: 10px;
+
+    text-align: center;
+}
+
+.etapa-icone {
+    width: 39px;
+    height: 39px;
+
+    display: flex;
+
+    align-items: center;
+    justify-content: center;
+
+    border-radius: 50%;
+
+    background: #f1e7e9;
+
+    border: 3px solid #ffffff;
+
+    box-shadow:
+        0 2px 8px
+        rgba(80, 40, 50, 0.08);
+
+    font-size: 14px;
+
+    transition:
+        all 0.3s ease;
+}
+
+.etapa.ativa {
+    color: #a95568;
+
+    font-weight: 700;
+}
+
+.etapa.ativa .etapa-icone {
+    background: #d98296;
+
+    color: #ffffff;
+}
+
+.etapa.concluida {
+    color: #8f6870;
+}
+
+.etapa.concluida .etapa-icone {
+    background: #b86b7c;
+
+    color: #ffffff;
+}
+
+
+/* =========================================================
+   MENSAGEM
+   ========================================================= */
+
+.mensagem-status {
+    margin-top: 27px;
+
+    padding: 15px;
+
+    background: #fff6f8;
+
+    border: 1px solid #f2dce1;
+
+    border-radius: 10px;
+
+    color: #805660;
+
+    font-size: 13px;
+
+    line-height: 1.5;
+
+    text-align: center;
+}
+
+
+/* =========================================================
+   BLOCOS
+   ========================================================= */
+
+.bloco {
+    background: #ffffff;
+
+    border: 1px solid #f0dfe3;
+
+    border-radius: 16px;
+
+    padding: 20px;
+
+    margin-bottom: 14px;
+}
+
+.bloco-titulo {
+    color: #684237;
+
+    font-size: 15px;
+
+    font-weight: 700;
+
+    margin-bottom: 15px;
+}
+
+
+/* =========================================================
+   ITENS
+   ========================================================= */
+
+#itensPedido {
+    display: flex;
+
+    flex-direction: column;
+
+    gap: 8px;
+}
+
+.item-pedido {
+    width: 100%;
+
+    display: flex;
+
+    align-items: center;
+
+    justify-content: space-between;
+
+    gap: 12px;
+
+    padding: 12px;
+
+    background: #fffafa;
+
+    border-radius: 9px;
+
+    overflow: hidden;
+}
+
+
+/* =========================================================
+   IMAGEM DO PRODUTO
+   ========================================================= */
+
+/*
+   IMPORTANTE:
+   A imagem fica limitada a exatamente 50x50 pixels.
+*/
+
+.item-pedido .item-imagem {
+    width: 50px !important;
+
+    height: 50px !important;
+
+    min-width: 50px !important;
+
+    max-width: 50px !important;
+
+    min-height: 50px !important;
+
+    max-height: 50px !important;
+
+    flex: 0 0 50px !important;
+
+    display: block !important;
+
+    object-fit: cover !important;
+
+    object-position: center !important;
+
+    border-radius: 10px !important;
+
+    margin: 0 !important;
+
+    padding: 0 !important;
+}
+
+
+/* =========================================================
+   INFORMAÇÕES DO ITEM
+   ========================================================= */
+
+.item-info {
+    min-width: 0;
+
+    flex: 1;
+
+    display: flex;
+
+    align-items: center;
+
+    gap: 8px;
+
+    overflow: hidden;
+}
+
+.item-nome {
+    color: #674f4a;
+
+    font-size: 13px;
+
+    overflow: hidden;
+
+    text-overflow: ellipsis;
+
+    white-space: nowrap;
+}
+
+.item-quantidade {
+    color: #9b817c;
+
+    font-size: 12px;
+
+    white-space: nowrap;
+}
+
+.item-preco {
+    color: #a75c6c;
+
+    font-size: 13px;
+
+    font-weight: 700;
+
+    white-space: nowrap;
+
+    flex-shrink: 0;
+}
+
+
+/* =========================================================
+   TOTAL
+   ========================================================= */
+
+.total {
+    display: flex;
+
+    justify-content: space-between;
+
+    align-items: center;
+
+    margin-top: 15px;
+
+    padding-top: 15px;
+
+    border-top: 1px solid #eee4e7;
+}
+
+.total span {
+    color: #8f7772;
+
+    font-size: 13px;
+}
+
+.total strong {
+    color: #b45f70;
+
+    font-size: 21px;
+}
+
+
+/* =========================================================
+   INFORMAÇÕES
+   ========================================================= */
+
+.informacoes {
+    display: grid;
+
+    grid-template-columns: 1fr 1fr;
+
+    gap: 10px;
+}
+
+.informacoes div {
+    padding: 12px;
+
+    background: #fbf7f8;
+
+    border-radius: 9px;
+}
+
+.informacoes span {
+    display: block;
+
+    color: #a38b86;
+
+    font-size: 10px;
+
+    margin-bottom: 5px;
+}
+
+.informacoes strong {
+    color: #604c47;
+
+    font-size: 12px;
+}
+
+
+/* =========================================================
+   ATUALIZAÇÃO
+   ========================================================= */
+
+.atualizacao {
+    display: flex;
+
+    justify-content: center;
+
+    align-items: center;
+
+    gap: 7px;
+
+    margin: 18px 0;
+
+    color: #a38c88;
+
+    font-size: 10px;
+}
+
+.bolinha {
+    width: 7px;
+
+    height: 7px;
+
+    border-radius: 50%;
+
+    background: #75af80;
+}
+
+
+/* =========================================================
+   VOLTAR
+   ========================================================= */
+
+.voltar {
+    display: block;
+
+    width: fit-content;
+
+    margin: 0 auto;
+
+    color: #a85b6c;
+
+    font-size: 12px;
+
+    text-decoration: none;
+}
+
+.voltar:hover {
+    text-decoration: underline;
+}
+
+
+/* =========================================================
+   LOADING
+   ========================================================= */
+
+.estado {
+    background: #ffffff;
+
+    border: 1px solid #f0dfe3;
+
+    border-radius: 16px;
+
+    padding: 50px 25px;
+
+    text-align: center;
+}
+
+.spinner {
+    width: 34px;
+
+    height: 34px;
+
+    margin: 0 auto 15px;
+
+    border: 3px solid #f1dfe3;
+
+    border-top-color: #b75d70;
+
+    border-radius: 50%;
+
+    animation:
+        girar 0.8s linear infinite;
+}
+
+@keyframes girar {
+
+    to {
+        transform:
+            rotate(360deg);
+    }
+}
+
+.estado p {
+    color: #9b817c;
+
+    font-size: 13px;
+}
+
+
+/* =========================================================
+   ERRO
+   ========================================================= */
+
+.estado-icone {
+    font-size: 40px;
+
+    margin-bottom: 12px;
+}
+
+.estado h2 {
+    color: #684237;
+
+    font-size: 20px;
+
+    margin-bottom: 7px;
+}
+
+.estado a {
+    display: inline-block;
+
+    margin-top: 20px;
+
+    padding: 11px 18px;
+
+    border-radius: 9px;
+
+    background: #f7e3e8;
+
+    color: #985365;
+
+    text-decoration: none;
+
+    font-size: 12px;
+
+    font-weight: 700;
+}
+
+
+/* =========================================================
+   CANCELADO
+   ========================================================= */
+
+.status-box.cancelado {
+    border-color: #efd1d1;
+}
+
+.status-box.cancelado .mensagem-status {
+    background: #fff4f4;
+
+    border-color: #efd4d4;
+
+    color: #9b5757;
+}
+
+
+/* =========================================================
+   MOBILE
+   ========================================================= */
+
+@media (max-width: 600px) {
+
+    .pagina {
+        padding: 20px 10px;
+    }
+
+    .logo-area h1 {
+        font-size: 23px;
+    }
+
+    .pedido-cabecalho {
+        padding: 16px;
+    }
+
+    .pedido-cabecalho strong {
+        font-size: 19px;
+    }
+
+    .saudacao {
+        padding: 17px;
+    }
+
+    .status-box {
+        padding: 17px;
+    }
+
+    .status-titulo {
+        flex-direction: column;
+
+        align-items: flex-start;
+
+        margin-bottom: 24px;
+    }
+
+    .linha-progresso {
+        left: 12%;
+
+        right: 12%;
+    }
+
+    .etapa {
+        font-size: 9px;
+    }
+
+    .etapa-icone {
+        width: 35px;
+
+        height: 35px;
+
+        font-size: 12px;
+    }
+
+    .bloco {
+        padding: 17px;
+    }
+
+    .informacoes {
+        grid-template-columns: 1fr;
+    }
+
+    .total strong {
+        font-size: 19px;
+    }
+
+    /* Imagem menor no celular */
+
+    .item-pedido .item-imagem {
+        width: 45px !important;
+
+        height: 45px !important;
+
+        min-width: 45px !important;
+
+        max-width: 45px !important;
+
+        min-height: 45px !important;
+
+        max-height: 45px !important;
+
+        flex-basis: 45px !important;
+    }
+}
+
+/* =========================================================
+   STATUS DO PAGAMENTO
+========================================================= */
+
+.status-pagamento-gela {
+    width: 100%;
+    display: flex;
+    align-items: center;
+    gap: 15px;
+
+    padding: 18px 20px;
+    margin-bottom: 20px;
+
+    border-radius: 16px;
+
+    box-sizing: border-box;
+
+    transition: all 0.3s ease;
+}
+
+.status-pagamento-icone {
+    width: 42px;
+    height: 42px;
+
+    min-width: 42px;
+
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    border-radius: 50%;
+
+    font-size: 20px;
+    font-weight: 700;
+}
+
+.status-pagamento-gela strong {
+    display: block;
+
+    font-size: 16px;
+
+    margin-bottom: 4px;
+}
+
+.status-pagamento-gela span {
+    display: block;
+
+    font-size: 13px;
+
+    line-height: 1.5;
+}
+
+
+/* =========================================================
+   APROVADO
+========================================================= */
+
+.pagamento-aprovado {
+    background: #eefaf2;
+
+    border: 1px solid #b8e5c7;
+
+    color: #246b3a;
+}
+
+.pagamento-aprovado
+.status-pagamento-icone {
+    background: #2e9b52;
+
+    color: white;
+}
+
+
+/* =========================================================
+   PENDENTE
+========================================================= */
+
+.pagamento-pendente {
+    background: #fff8e8;
+
+    border: 1px solid #f1d58a;
+
+    color: #795d16;
+}
+
+.pagamento-pendente
+.status-pagamento-icone {
+    background: #e4b52f;
+
+    color: white;
+}
+
+
+/* =========================================================
+   RECUSADO
+========================================================= */
+
+.pagamento-recusado {
+    background: #fff0f0;
+
+    border: 1px solid #efb4b4;
+
+    color: #9b3030;
+}
+
+.pagamento-recusado
+.status-pagamento-icone {
+    background: #d94b4b;
+
+    color: white;
+}
+
+
+/* =========================================================
+   CANCELADO
+========================================================= */
+
+.pagamento-cancelado {
+    background: #f4f4f4;
+
+    border: 1px solid #d5d5d5;
+
+    color: #666;
+}
+
+.pagamento-cancelado
+.status-pagamento-icone {
+    background: #777;
+
+    color: white;
+}
+
+
+/* =========================================================
+   MOBILE
+========================================================= */
+
+@media (max-width: 600px) {
+
+    .status-pagamento-gela {
+        padding: 15px;
+
+        gap: 12px;
+    }
+
+    .status-pagamento-icone {
+        width: 38px;
+        height: 38px;
+
+        min-width: 38px;
+    }
+
+}

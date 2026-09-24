@@ -1,0 +1,892 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+
+<head>
+
+    <meta charset="UTF-8">
+
+    <meta
+        name="viewport"
+        content="width=device-width, initial-scale=1.0"
+    >
+
+    <title>Pagamento Pix - Gela Gourmet</title>
+
+    <link
+        rel="preconnect"
+        href="https://fonts.googleapis.com"
+    >
+
+    <link
+        rel="preconnect"
+        href="https://fonts.gstatic.com"
+        crossorigin
+    >
+
+    <link
+        href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Great+Vibes&display=swap"
+        rel="stylesheet"
+    >
+
+    <style>
+
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+
+            margin: 0;
+
+            min-height: 100vh;
+
+            display: flex;
+
+            justify-content: center;
+
+            align-items: center;
+
+            padding: 20px;
+
+            font-family:
+                "DM Sans",
+                Arial,
+                sans-serif;
+
+            background:
+                linear-gradient(
+                    135deg,
+                    #fff5f7,
+                    #f8ebe5
+                );
+
+        }
+
+        .container {
+
+            width: 100%;
+
+            max-width: 480px;
+
+        }
+
+        .logo {
+
+            text-align: center;
+
+            margin-bottom: 18px;
+
+            font-family:
+                "Great Vibes",
+                cursive;
+
+            font-size: 42px;
+
+            color: #7b3f38;
+
+        }
+
+        .card {
+
+            background: white;
+
+            border-radius: 24px;
+
+            padding: 28px 24px;
+
+            box-shadow:
+                0 15px 45px
+                rgba(70, 30, 30, 0.12);
+
+            text-align: center;
+
+        }
+
+        h1 {
+
+            margin:
+                0 0 8px;
+
+            font-size: 25px;
+
+            color: #422a28;
+
+        }
+
+        .subtitle {
+
+            margin:
+                0 0 20px;
+
+            color: #777;
+
+            font-size: 15px;
+
+        }
+
+        .pedido {
+
+            display: inline-block;
+
+            padding:
+                7px 14px;
+
+            border-radius: 30px;
+
+            background: #fff0f2;
+
+            color: #9b4f59;
+
+            font-weight: 700;
+
+            font-size: 14px;
+
+            margin-bottom: 18px;
+
+        }
+
+        .valor {
+
+            font-size: 28px;
+
+            font-weight: 700;
+
+            color: #6f3a35;
+
+            margin-bottom: 20px;
+
+        }
+
+        .qr-area {
+
+            display: flex;
+
+            justify-content: center;
+
+            margin:
+                10px 0 20px;
+
+        }
+
+        #qrCode {
+
+            width: 260px;
+
+            height: 260px;
+
+            object-fit: contain;
+
+            border-radius: 14px;
+
+            border: 1px solid #eee;
+
+            padding: 10px;
+
+            background: white;
+
+        }
+
+        .instruction {
+
+            font-size: 14px;
+
+            color: #666;
+
+            line-height: 1.5;
+
+            margin-bottom: 15px;
+
+        }
+
+        .pix-code {
+
+            width: 100%;
+
+            padding: 13px;
+
+            border:
+                1px solid #ddd;
+
+            border-radius: 12px;
+
+            background: #fafafa;
+
+            color: #555;
+
+            font-size: 12px;
+
+            margin-bottom: 10px;
+
+        }
+
+        .copy-button {
+
+            width: 100%;
+
+            border: none;
+
+            border-radius: 12px;
+
+            padding: 14px;
+
+            background: #7b3f38;
+
+            color: white;
+
+            font-size: 15px;
+
+            font-weight: 700;
+
+            cursor: pointer;
+
+            transition: 0.2s;
+
+        }
+
+        .copy-button:hover {
+
+            transform:
+                translateY(-1px);
+
+            opacity: 0.92;
+
+        }
+
+        .status {
+
+            margin-top: 20px;
+
+            padding: 14px;
+
+            border-radius: 12px;
+
+            background: #fff8e8;
+
+            color: #856404;
+
+            font-size: 14px;
+
+            font-weight: 600;
+
+        }
+
+        .status.aprovado {
+
+            background: #eaf8ef;
+
+            color: #23723d;
+
+        }
+
+        .status.erro {
+
+            background: #fdecec;
+
+            color: #a33a3a;
+
+        }
+
+        .loading {
+
+            padding: 30px;
+
+            color: #777;
+
+        }
+
+        .back {
+
+            display: inline-block;
+
+            margin-top: 18px;
+
+            color: #7b3f38;
+
+            text-decoration: none;
+
+            font-weight: 600;
+
+        }
+
+        @media (max-width: 480px) {
+
+            .card {
+
+                padding:
+                    24px 18px;
+
+            }
+
+            #qrCode {
+
+                width: 230px;
+
+                height: 230px;
+
+            }
+
+        }
+
+    </style>
+
+</head>
+
+<body>
+
+    <main class="container">
+
+        <div class="logo">
+            Gela Gourmet
+        </div>
+
+        <section class="card">
+
+            <div
+                id="loading"
+                class="loading"
+            >
+                Carregando pagamento...
+            </div>
+
+            <div
+                id="conteudo"
+                style="display:none;"
+            >
+
+                <div
+                    id="pedido"
+                    class="pedido"
+                >
+                    Pedido #-
+                </div>
+
+                <h1>
+                    Pague com Pix
+                </h1>
+
+                <p class="subtitle">
+                    Escaneie o QR Code com o aplicativo do seu banco.
+                </p>
+
+                <div
+                    id="valor"
+                    class="valor"
+                >
+                    R$ 0,00
+                </div>
+
+                <div class="qr-area">
+
+                    <img
+                        id="qrCode"
+                        alt="QR Code Pix"
+                    >
+
+                </div>
+
+                <p class="instruction">
+
+                    Aponte a câmera do seu banco
+                    para o QR Code ou copie o
+                    código Pix abaixo.
+
+                </p>
+
+                <input
+                    id="pixCode"
+                    class="pix-code"
+                    type="text"
+                    readonly
+                >
+
+                <button
+                    id="copyButton"
+                    class="copy-button"
+                    onclick="copiarPix()"
+                >
+                    Copiar Pix Copia e Cola
+                </button>
+
+                <div
+                    id="status"
+                    class="status"
+                >
+                    Aguardando pagamento...
+                </div>
+
+                <a
+                    href="index.html"
+                    class="back"
+                >
+                    Voltar para a loja
+                </a>
+
+            </div>
+
+        </section>
+
+    </main>
+
+    <!-- SUPABASE -->
+
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
+    <script>
+
+        // ============================================
+        // SUPABASE
+        // ============================================
+
+        const SUPABASE_URL =
+            "https://aiirehncupywhmftzzmn.supabase.co";
+
+        const SUPABASE_KEY =
+            "sb_publishable_6qSFWsLKbBxwYEE_N_yU3A_d-vOpHv9";
+
+        const supabaseClient =
+            window.supabase.createClient(
+                SUPABASE_URL,
+                SUPABASE_KEY
+            );
+
+
+        // ============================================
+        // DADOS DO PAGAMENTO
+        // ============================================
+
+        const pagamentoJSON =
+            sessionStorage.getItem(
+                "gela_pagamento_pix"
+            );
+
+        let pagamento = null;
+
+        if (pagamentoJSON) {
+
+            try {
+
+                pagamento =
+                    JSON.parse(
+                        pagamentoJSON
+                    );
+
+            } catch (error) {
+
+                console.error(
+                    "Erro ao ler pagamento:",
+                    error
+                );
+
+            }
+
+        }
+
+
+        // ============================================
+        // ELEMENTOS
+        // ============================================
+
+        const loading =
+            document.getElementById(
+                "loading"
+            );
+
+        const conteudo =
+            document.getElementById(
+                "conteudo"
+            );
+
+        const pedidoElement =
+            document.getElementById(
+                "pedido"
+            );
+
+        const valorElement =
+            document.getElementById(
+                "valor"
+            );
+
+        const qrCode =
+            document.getElementById(
+                "qrCode"
+            );
+
+        const pixCode =
+            document.getElementById(
+                "pixCode"
+            );
+
+        const statusElement =
+            document.getElementById(
+                "status"
+            );
+
+
+        // ============================================
+        // VERIFICA DADOS
+        // ============================================
+
+        if (!pagamento) {
+
+            loading.innerHTML =
+                "Não foi possível carregar o pagamento.";
+
+            loading.style.color =
+                "#a33a3a";
+
+        } else {
+
+            iniciarPagina();
+
+        }
+
+
+        // ============================================
+        // INICIAR
+        // ============================================
+
+        function iniciarPagina() {
+
+            loading.style.display =
+                "none";
+
+            conteudo.style.display =
+                "block";
+
+
+            // Pedido
+
+            pedidoElement.textContent =
+                "Pedido #" +
+                pagamento.pedido_id;
+
+
+            // Valor
+
+            const total =
+                Number(
+                    pagamento.total ||
+                    0
+                );
+
+            valorElement.textContent =
+                total.toLocaleString(
+                    "pt-BR",
+                    {
+                        style:
+                            "currency",
+                        currency:
+                            "BRL"
+                    }
+                );
+
+
+            // QR Code
+
+            qrCode.src =
+                "data:image/jpeg;base64," +
+                pagamento.qr_code_base64;
+
+
+            // Pix Copia e Cola
+
+            pixCode.value =
+                pagamento.qr_code;
+
+
+            // Começa acompanhamento
+
+            consultarPagamento();
+
+        }
+
+
+        // ============================================
+        // COPIAR PIX
+        // ============================================
+
+        async function copiarPix() {
+
+            try {
+
+                await navigator.clipboard.writeText(
+                    pixCode.value
+                );
+
+                const button =
+                    document.getElementById(
+                        "copyButton"
+                    );
+
+                const original =
+                    button.textContent;
+
+                button.textContent =
+                    "Pix copiado!";
+
+                setTimeout(
+                    () => {
+
+                        button.textContent =
+                            original;
+
+                    },
+                    2000
+                );
+
+            } catch (error) {
+
+                pixCode.select();
+
+                document.execCommand(
+                    "copy"
+                );
+
+                alert(
+                    "Código Pix copiado."
+                );
+
+            }
+
+        }
+
+
+        // ============================================
+        // CONSULTAR PAGAMENTO
+        // ============================================
+
+        let consultando =
+            false;
+
+        async function consultarPagamento() {
+
+            if (
+                consultando
+            ) {
+
+                return;
+
+            }
+
+            if (
+                !pagamento
+            ) {
+
+                return;
+
+            }
+
+            consultando =
+                true;
+
+            try {
+
+                const {
+                    data,
+                    error
+                } =
+                    await supabaseClient
+                        .functions
+                        .invoke(
+                            "criar-pagamento",
+                            {
+
+                                body: {
+
+                                    action:
+                                        "consultar",
+
+                                    pedido_id:
+                                        pagamento.pedido_id,
+
+                                    mercado_pago_order_id:
+                                        pagamento.mercado_pago_order_id
+
+                                }
+
+                            }
+                        );
+
+
+                if (error) {
+
+                    console.error(
+                        "Erro ao consultar pagamento:",
+                        error
+                    );
+
+                    return;
+
+                }
+
+
+                console.log(
+                    "Status Pix:",
+                    data
+                );
+
+
+                // ==================================
+                // PAGAMENTO APROVADO
+                // ==================================
+
+                if (
+                    data.status ===
+                    "processed"
+                ) {
+
+                    mostrarAprovado();
+
+                    return;
+
+                }
+
+
+                // ==================================
+                // PAGAMENTO RECUSADO
+                // ==================================
+
+                if (
+                    data.status ===
+                    "failed"
+                ) {
+
+                    mostrarErro(
+                        "O pagamento não foi aprovado."
+                    );
+
+                    return;
+
+                }
+
+
+                // ==================================
+                // CANCELADO
+                // ==================================
+
+                if (
+                    data.status ===
+                    "canceled"
+                ) {
+
+                    mostrarErro(
+                        "Este pagamento foi cancelado."
+                    );
+
+                    return;
+
+                }
+
+
+                // ==================================
+                // EXPIRADO
+                // ==================================
+
+                if (
+                    data.status ===
+                    "expired"
+                ) {
+
+                    mostrarErro(
+                        "Este Pix expirou."
+                    );
+
+                    return;
+
+                }
+
+
+                // ==================================
+                // AGUARDANDO
+                // ==================================
+
+                statusElement.textContent =
+                    "Aguardando pagamento...";
+
+            } catch (error) {
+
+                console.error(
+                    "Erro:",
+                    error
+                );
+
+            } finally {
+
+                consultando =
+                    false;
+
+            }
+
+        }
+
+
+        // ============================================
+        // APROVADO
+        // ============================================
+
+        function mostrarAprovado() {
+
+            statusElement.className =
+                "status aprovado";
+
+            statusElement.innerHTML =
+                "Pagamento aprovado!<br>" +
+                "Seu pedido foi confirmado.";
+
+            clearInterval(
+                intervaloConsulta
+            );
+
+            sessionStorage.removeItem(
+                "gela_pagamento_pix"
+            );
+
+            setTimeout(
+                () => {
+
+                    window.location.href =
+                        "acompanhar-pedido.html";
+
+                },
+                2500
+            );
+
+        }
+
+
+        // ============================================
+        // ERRO
+        // ============================================
+
+        function mostrarErro(
+            mensagem
+        ) {
+
+            statusElement.className =
+                "status erro";
+
+            statusElement.textContent =
+                mensagem;
+
+            clearInterval(
+                intervaloConsulta
+            );
+
+        }
+
+
+        // ============================================
+        // CONSULTA A CADA 5 SEGUNDOS
+        // ============================================
+
+        const intervaloConsulta =
+            setInterval(
+                consultarPagamento,
+                5000
+            );
+
+    </script>
+
+</body>
+
+</html>
