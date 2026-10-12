@@ -2595,3 +2595,13 @@ body {
         font-size: 16px;
     }
 }
+
+/* Entrega a combinar (Santa Cruz das Palmeiras) */
+
+.entrega-combinar {
+    display: block;
+    margin-top: 4px;
+    font-size: 12px;
+    font-weight: 700;
+    color: #9b4056;
+}

@@ -259,6 +259,63 @@ async function carregarPedido() {
 
 
 /* =========================================================
+   ENTREGA A COMBINAR (SANTA CRUZ DAS PALMEIRAS)
+========================================================= */
+
+function entregaACombinar(dados) {
+
+    const tipo =
+        String(dados.tipo_entrega || "")
+            .toLowerCase();
+
+    if (
+        tipo !== "delivery" &&
+        tipo !== "entrega"
+    ) {
+        return false;
+    }
+
+    const endereco =
+        String(
+            dados.cliente_endereco ||
+            dados.endereco ||
+            ""
+        );
+
+    if (
+        /entrega a combinar/i.test(endereco) ||
+        /santa cruz das palmeiras/i.test(endereco)
+    ) {
+        return true;
+    }
+
+    // Reserva: marca guardada neste aparelho ao fazer o pedido
+    try {
+
+        const salvo =
+            JSON.parse(
+                localStorage.getItem(
+                    "gelaGourmetPedido"
+                ) || "null"
+            );
+
+        if (
+            salvo &&
+            String(salvo.pedidoId) === String(dados.id) &&
+            salvo.entregaCombinar
+        ) {
+            return true;
+        }
+
+    } catch (e) {
+        // ignora
+    }
+
+    return false;
+}
+
+
+/* =========================================================
    MOSTRAR PEDIDO
 ========================================================= */
 
@@ -299,6 +356,22 @@ function mostrarPedido(dados) {
 
     totalPedido.textContent =
         dinheiro(dados.total);
+
+
+    const combinar =
+        entregaACombinar(dados);
+
+    document.getElementById(
+        "linhaEntrega"
+    ).style.display =
+        combinar ? "flex" : "none";
+
+    document.getElementById(
+        "totalLabel"
+    ).textContent =
+        combinar
+            ? "Total dos geladinhos"
+            : "Total";
 
 
     pagamentoPedido.textContent =

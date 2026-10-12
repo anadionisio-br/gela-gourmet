@@ -994,3 +994,36 @@ body {
     }
 
 }
+
+/* =========================================================
+   AJUSTES: logo da marca e entrega a combinar
+   ========================================================= */
+
+.logo-circle {
+    width: 72px;
+    height: 72px;
+    overflow: hidden;
+    background: #fff;
+    border: 3px solid #fff;
+}
+
+.logo-circle img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.linha-entrega {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 12px;
+    padding: 12px 0 0;
+    font-size: 14px;
+    color: #806c65;
+}
+
+.linha-entrega strong {
+    color: #c95068;
+    text-align: right;
+}

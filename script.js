@@ -1,29 +1,40 @@
 // =========================================================
 // GELA GOURMET - SCRIPT PRINCIPAL
+// Catálogo (Supabase), carrinho, entrega, checkout e WhatsApp.
+// Efeitos visuais (parallax, 3D, revelar ao rolar) ficam em efeitos.js
 // =========================================================
 
 // =========================================================
 // SUPABASE
 // =========================================================
 
-const SUPABASE_URL =
-  "https://aiirehncupywhmftzzmn.supabase.co";
+const SUPABASE_URL = "https://aiirehncupywhmftzzmn.supabase.co";
+const SUPABASE_KEY = "sb_publishable_6qSFWsLKbBxwYEE_N_yU3A_d-vOpHv9";
 
-const SUPABASE_KEY =
-  "sb_publishable_6qSFWsLKbBxwYEE_N_yU3A_d-vOpHv9";
+let supabaseClient = null;
 
-const supabaseClient =
-  window.supabase.createClient(
-    SUPABASE_URL,
-    SUPABASE_KEY
-  );
+try {
+  supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+} catch (error) {
+  console.error("❌ Não foi possível iniciar o Supabase:", error);
+}
 
 // =========================================================
 // CONFIGURAÇÕES
 // =========================================================
 
 const WHATSAPP = "5519993149687";
+
+// Taxa fixa de entrega (somente Tambaú)
 const DELIVERY_FEE = 5;
+
+const CITY_TAMBAU = "Tambaú - SP";
+const CITY_SCP = "Santa Cruz das Palmeiras - SP";
+
+// Textos da regra de Santa Cruz das Palmeiras
+const TEXT_DELIVERY_TO_COMBINE = "Valor da entrega a combinar";
+const NOTE_SCP =
+  "Entrega em Santa Cruz das Palmeiras — valor da entrega a combinar";
 
 // =========================================================
 // VARIÁVEIS
@@ -32,10 +43,7 @@ const DELIVERY_FEE = 5;
 let products = [];
 let cart = [];
 
-// =========================================================
-// ACOMPANHAMENTO DO PEDIDO
-// =========================================================
-
+// Acompanhamento do pedido
 let pedidoAcompanhado = null;
 let statusAnteriorPedido = null;
 let intervaloStatusPedido = null;
@@ -44,38 +52,26 @@ let intervaloStatusPedido = null;
 // ELEMENTOS
 // =========================================================
 
-const productsContainer =
-  document.getElementById("products");
+const productsContainer = document.getElementById("products");
+const cartContainer = document.getElementById("cartItems");
+const subtotalElement = document.getElementById("subtotal");
+const deliveryElement = document.getElementById("deliveryFee");
+const totalElement = document.getElementById("total");
 
-const cartContainer =
-  document.getElementById("cartItems");
-
-const subtotalElement =
-  document.getElementById("subtotal");
-
-const deliveryElement =
-  document.getElementById("deliveryFee");
-
-const totalElement =
-  document.getElementById("total");
+const reducedMotion = window.matchMedia(
+  "(prefers-reduced-motion: reduce)"
+).matches;
 
 // =========================================================
-// DINHEIRO
+// UTILITÁRIOS
 // =========================================================
 
 function money(value) {
-  return Number(value || 0).toLocaleString(
-    "pt-BR",
-    {
-      style: "currency",
-      currency: "BRL"
-    }
-  );
+  return Number(value || 0).toLocaleString("pt-BR", {
+    style: "currency",
+    currency: "BRL"
+  });
 }
-
-// =========================================================
-// ESCAPAR HTML
-// =========================================================
 
 function escapeHtml(value) {
   return String(value || "")
@@ -86,127 +82,240 @@ function escapeHtml(value) {
     .replace(/'/g, "&#039;");
 }
 
+function normalizeText(value) {
+  return String(value || "")
+    .toLowerCase()
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "");
+}
+
+// Aviso rápido na tela (substitui os alert())
+let toastTimer = null;
+
+function showToast(message, type) {
+  const toast = document.getElementById("toast");
+
+  if (!toast) {
+    return;
+  }
+
+  toast.textContent = message;
+  toast.classList.toggle("error", type === "error");
+  toast.classList.add("show");
+
+  clearTimeout(toastTimer);
+
+  toastTimer = setTimeout(function () {
+    toast.classList.remove("show");
+  }, 2600);
+}
+
+// Marca um campo com erro, avisa e leva o cliente até ele
+function failField(message, field) {
+  showToast(message, "error");
+
+  if (field) {
+    field.classList.add("field-error");
+
+    field.addEventListener(
+      "input",
+      function () {
+        field.classList.remove("field-error");
+      },
+      { once: true }
+    );
+
+    field.addEventListener(
+      "change",
+      function () {
+        field.classList.remove("field-error");
+      },
+      { once: true }
+    );
+
+    field.scrollIntoView({
+      behavior: reducedMotion ? "auto" : "smooth",
+      block: "center"
+    });
+
+    field.focus({ preventScroll: true });
+  }
+
+  return false;
+}
+
+// =========================================================
+// IMAGENS E DESCRIÇÕES DOS PRODUTOS
+// =========================================================
+
+function resolveImage(path) {
+  let image = path || "";
+
+  if (
+    image &&
+    !image.startsWith("http") &&
+    !image.startsWith("/") &&
+    !image.startsWith("imagens/")
+  ) {
+    image = "imagens/" + image;
+  }
+
+  return image;
+}
+
+// Foto local de reserva, escolhida pelo nome do sabor
+// (usada só quando a imagem cadastrada não carrega)
+function fallbackImageFor(name) {
+  const n = normalizeText(name);
+
+  if (n.includes("ovomaltine")) return "imagens/ovomaltine1.jpg";
+  if (n.includes("oreo")) return "imagens/oreo1.jpg";
+  if (n.includes("ninho")) return "imagens/ninho.jpeg";
+
+  return "";
+}
+
+// Descrição curta pelo ingrediente citado no nome do sabor.
+// Não existe descrição no banco, então nada é inventado além
+// do que o próprio nome do sabor já diz.
+function describeProduct(name) {
+  const n = normalizeText(name);
+
+  if (n.includes("ninho") && n.includes("nutella")) {
+    return "Base cremosa de leite Ninho com camadas de Nutella.";
+  }
+  if (n.includes("ovomaltine")) {
+    return "Cremoso e gelado, com crocantes de Ovomaltine.";
+  }
+  if (n.includes("oreo")) {
+    return "Cremoso e gelado, com biscoito Oreo.";
+  }
+  if (n.includes("ninho")) {
+    return "Cremoso de leite Ninho, doce na medida.";
+  }
+  if (n.includes("nutella")) {
+    return "Cremoso e recheado com Nutella.";
+  }
+  if (n.includes("maracuja")) {
+    return "Cremoso, com o azedinho do maracujá.";
+  }
+  if (n.includes("morango")) {
+    return "Cremoso e gelado, com sabor de morango.";
+  }
+  if (n.includes("chocolate")) {
+    return "Chocolate cremoso e bem gelado.";
+  }
+
+  return "Geladinho gourmet cremoso e bem gelado.";
+}
+
+// Cria <img> com troca automática para a foto reserva
+// e, se nada carregar, mostra o selo da marca.
+function buildImage(src, name, className) {
+  const img = document.createElement("img");
+
+  img.className = className;
+  img.alt = name;
+  img.loading = "lazy";
+  img.decoding = "async";
+
+  const fallback = fallbackImageFor(name);
+  let triedFallback = false;
+
+  img.addEventListener("error", function () {
+    if (!triedFallback && fallback && !img.src.endsWith(fallback)) {
+      triedFallback = true;
+      img.src = fallback;
+      return;
+    }
+
+    img.dataset.broken = "true";
+    img.removeAttribute("src");
+    img.style.visibility = "hidden";
+
+    const holder = img.parentElement;
+
+    if (holder && !holder.querySelector(".card-fallback")) {
+      const box = document.createElement("div");
+      box.className = "card-fallback";
+      box.innerHTML =
+        '<img src="imagens/logo-selo-pequeno.jpg" alt="" width="80" height="90">';
+      holder.appendChild(box);
+    }
+  });
+
+  img.src = src || fallback || "imagens/logo-selo-pequeno.jpg";
+
+  return img;
+}
+
 // =========================================================
 // CARREGAR PRODUTOS
 // =========================================================
 
+function showCatalogMessage(title, text, withRetry) {
+  productsContainer.innerHTML = `
+    <div class="cards-msg">
+      <h3>${escapeHtml(title)}</h3>
+      <p>${text}</p>
+      ${
+        withRetry
+          ? '<button type="button" class="btn small" onclick="loadProducts()">Tentar novamente</button>'
+          : ""
+      }
+    </div>
+  `;
+}
+
 async function loadProducts() {
-
-  console.log("🍓 Carregando produtos...");
-
   if (!productsContainer) {
-
-    console.error(
-      "ERRO: elemento #products não existe no index.html."
-    );
-
+    console.error("ERRO: elemento #products não existe no index.html.");
     return;
   }
 
-  productsContainer.innerHTML = `
-    <div style="
-      width: 100%;
-      text-align: center;
-      padding: 40px 20px;
-    ">
-      <p>Carregando sabores... 🍓</p>
-    </div>
-  `;
+  showCatalogMessage("Carregando sabores...", "", false);
+
+  if (!supabaseClient) {
+    showCatalogMessage(
+      "Não foi possível carregar os sabores",
+      "Verifique sua conexão com a internet e tente novamente.",
+      true
+    );
+    return;
+  }
 
   try {
-
-    const { data, error } =
-      await supabaseClient
-        .from("produtos")
-        .select(
-          "id, nome, preco, imagem, disponivel"
-        )
-        .order("id", {
-          ascending: true
-        });
+    const { data, error } = await supabaseClient
+      .from("produtos")
+      .select("id, nome, preco, imagem, disponivel")
+      .order("id", { ascending: true });
 
     if (error) {
+      console.error("❌ ERRO DO SUPABASE:", error);
 
-      console.error(
-        "❌ ERRO DO SUPABASE:",
-        error
+      showCatalogMessage(
+        "Não foi possível carregar os sabores",
+        "Verifique a conexão com o banco de dados.",
+        true
       );
-
-      productsContainer.innerHTML = `
-        <div style="
-          width: 100%;
-          text-align: center;
-          padding: 40px 20px;
-        ">
-
-          <h3>
-            Não foi possível carregar os sabores 😔
-          </h3>
-
-          <p>
-            Verifique a conexão com o banco de dados.
-          </p>
-
-          <button
-            type="button"
-            onclick="loadProducts()"
-            style="
-              margin-top: 15px;
-              padding: 12px 20px;
-              border: none;
-              border-radius: 10px;
-              cursor: pointer;
-            "
-          >
-            Tentar novamente
-          </button>
-
-        </div>
-      `;
-
       return;
     }
 
-    console.log(
-      "✅ Produtos recebidos do Supabase:",
-      data
-    );
-
     if (!data || data.length === 0) {
-
       products = [];
       cart = [];
 
-      productsContainer.innerHTML = `
-        <div style="
-          width: 100%;
-          text-align: center;
-          padding: 40px 20px;
-        ">
-
-          <h3>
-            Nenhum produto encontrado 🍦
-          </h3>
-
-          <p>
-            Cadastre os sabores na tabela
-            <strong>produtos</strong> do Supabase.
-          </p>
-
-        </div>
-      `;
+      showCatalogMessage(
+        "Nenhum sabor cadastrado ainda",
+        "Cadastre os sabores na tabela <strong>produtos</strong> do Supabase.",
+        false
+      );
 
       updateTotal();
-
       return;
     }
 
-    // =====================================================
-    // CONVERTER PRODUTOS
-    // =====================================================
-
-    products = data.map(function(product) {
-
+    products = data.map(function (product) {
       return {
         id: product.id,
         name: product.nome,
@@ -214,173 +323,109 @@ async function loadProducts() {
         img: product.imagem,
         disponivel: product.disponivel !== false
       };
-
     });
 
-    console.log(
-      "✅ Produtos convertidos:",
-      products
-    );
-
-    cart =
-      Array(products.length).fill(0);
+    cart = Array(products.length).fill(0);
 
     renderProducts();
-
     renderCart();
-
     updateTotal();
-
   } catch (error) {
+    console.error("❌ ERRO AO CARREGAR PRODUTOS:", error);
 
-    console.error(
-      "❌ ERRO AO CARREGAR PRODUTOS:",
-      error
+    showCatalogMessage(
+      "Ocorreu um erro ao carregar os sabores",
+      "Tente novamente em instantes.",
+      true
     );
-
-    productsContainer.innerHTML = `
-      <div style="
-        width: 100%;
-        text-align: center;
-        padding: 40px 20px;
-      ">
-
-        <h3>
-          Ocorreu um erro 😔
-        </h3>
-
-        <p>
-          Abra o console do navegador para ver o erro.
-        </p>
-
-        <button
-          type="button"
-          onclick="loadProducts()"
-          style="
-            margin-top: 15px;
-            padding: 12px 20px;
-            border: none;
-            border-radius: 10px;
-            cursor: pointer;
-          "
-        >
-          Tentar novamente
-        </button>
-
-      </div>
-    `;
   }
 }
 
 // =========================================================
-// MOSTRAR PRODUTOS
+// VITRINE
 // =========================================================
 
 function renderProducts() {
-
   if (!productsContainer) {
     return;
   }
 
   productsContainer.innerHTML = "";
 
-  products.forEach(
-    function(product, index) {
+  products.forEach(function (product, index) {
+    const card = document.createElement("article");
 
-      let imagem =
-        product.img || "";
+    card.className = "card reveal";
+    card.dataset.index = index;
+    card.style.setProperty("--d", (index % 3) * 90 + "ms");
 
-      if (
-        imagem &&
-        !imagem.startsWith("http") &&
-        !imagem.startsWith("/") &&
-        !imagem.startsWith("imagens/")
-      ) {
-        imagem =
-          "imagens/" + imagem;
-      }
-
-      const card =
-        document.createElement("div");
-
-      card.className = "card";
-
-      if (product.disponivel) {
-
-        card.innerHTML = `
-          <img
-            class="card-photo"
-            src="${escapeHtml(imagem)}"
-            alt="${escapeHtml(product.name)}"
-            onerror="this.style.display='none';"
-          >
-
-          <div class="card-body">
-
-            <h3>
-              ${escapeHtml(product.name)}
-            </h3>
-
-            <strong>
-              ${money(product.price)}
-            </strong>
-
-            <div class="qty">
-
-              <button
-                type="button"
-                onclick="changeQuantity(${index}, -1)"
-              >
-                −
-              </button>
-
-              <span id="quantity-${index}">
-                ${cart[index] || 0}
-              </span>
-
-              <button
-                type="button"
-                onclick="changeQuantity(${index}, 1)"
-              >
-                +
-              </button>
-
-            </div>
-
-          </div>
-        `;
-
-      } else {
-
-        card.innerHTML = `
-          <img
-            class="card-photo"
-            src="${escapeHtml(imagem)}"
-            alt="${escapeHtml(product.name)}"
-            onerror="this.style.display='none';"
-          >
-
-          <div class="card-body">
-
-            <h3>
-              ${escapeHtml(product.name)}
-            </h3>
-
-            <strong>
-              ${money(product.price)}
-            </strong>
-
-            <div class="indisponivel">
-              Indisponível
-            </div>
-
-          </div>
-        `;
-      }
-
-      productsContainer.appendChild(card);
+    if (!product.disponivel) {
+      card.classList.add("is-off");
     }
-  );
+
+    // ---- foto ----
+    const media = document.createElement("div");
+    media.className = "card-media";
+
+    media.appendChild(
+      buildImage(resolveImage(product.img), product.name, "card-photo")
+    );
+
+    if (!product.disponivel) {
+      const badge = document.createElement("span");
+      badge.className = "badge-off";
+      badge.textContent = "Esgotado";
+      media.appendChild(badge);
+    }
+
+    card.appendChild(media);
+
+    // ---- corpo ----
+    const body = document.createElement("div");
+    body.className = "card-body";
+
+    let action = "";
+
+    if (product.disponivel) {
+      action = `
+        <button type="button" class="add-btn"
+          onclick="changeQuantity(${index}, 1)"
+          aria-label="Adicionar ${escapeHtml(product.name)} ao pedido">
+          Adicionar
+        </button>
+
+        <div class="qty" role="group"
+          aria-label="Quantidade de ${escapeHtml(product.name)}">
+          <button type="button" onclick="changeQuantity(${index}, -1)"
+            aria-label="Diminuir quantidade">−</button>
+          <span id="quantity-${index}" aria-live="polite">${cart[index] || 0}</span>
+          <button type="button" onclick="changeQuantity(${index}, 1)"
+            aria-label="Aumentar quantidade">+</button>
+        </div>
+      `;
+    }
+
+    body.innerHTML = `
+      <h3>${escapeHtml(product.name)}</h3>
+      <p class="card-desc">${escapeHtml(describeProduct(product.name))}</p>
+      <div class="card-foot">
+        <strong class="price">${money(product.price)}</strong>
+        ${action}
+      </div>
+      ${
+        product.disponivel
+          ? ""
+          : '<div class="indisponivel">Esgotado no momento. Os outros sabores seguem disponíveis.</div>'
+      }
+    `;
+
+    card.appendChild(body);
+    productsContainer.appendChild(card);
+
+    if (window.observeReveal) {
+      window.observeReveal(card);
+    }
+  });
 }
 
 // =========================================================
@@ -388,526 +433,460 @@ function renderProducts() {
 // =========================================================
 
 function changeQuantity(index, amount) {
-
-  if (!products[index]) {
+  if (!products[index] || !products[index].disponivel) {
     return;
   }
 
-  if (!products[index].disponivel) {
+  const before = cart[index];
+
+  cart[index] = Math.max(0, cart[index] + amount);
+
+  if (cart[index] === before) {
     return;
-  }
-
-  cart[index] += amount;
-
-  if (cart[index] < 0) {
-    cart[index] = 0;
   }
 
   updateQuantityDisplay(index);
-
   renderCart();
-
   updateTotal();
-}
 
-// =========================================================
-// ATUALIZAR QUANTIDADE
-// =========================================================
+  if (amount > 0) {
+    const card = document.querySelector('.card[data-index="' + index + '"]');
+
+    if (before === 0) {
+      showToast(products[index].name + " adicionado ao pedido");
+    }
+
+    if (card) {
+      flyToCart(card.querySelector(".card-photo"));
+    }
+  }
+}
 
 function updateQuantityDisplay(index) {
-
-  const element =
-    document.getElementById(
-      "quantity-" + index
-    );
+  const element = document.getElementById("quantity-" + index);
+  const card = document.querySelector('.card[data-index="' + index + '"]');
 
   if (element) {
-    element.textContent =
-      cart[index];
+    element.textContent = cart[index];
+    element.classList.remove("pop");
+    void element.offsetWidth;
+    element.classList.add("pop");
+  }
+
+  if (card) {
+    card.classList.toggle("in-cart", cart[index] > 0);
   }
 }
 
-// =========================================================
-// ADICIONAR
-// =========================================================
-
+// Mantidas por compatibilidade com o código anterior
 function addToCart(index) {
-
-  if (!products[index]) {
-    return;
-  }
-
-  if (!products[index].disponivel) {
-
-    alert(
-      "Este sabor está indisponível."
-    );
-
-    return;
-  }
-
-  cart[index]++;
-
-  updateQuantityDisplay(index);
-
-  renderCart();
-
-  updateTotal();
+  changeQuantity(index, 1);
 }
-
-// =========================================================
-// REMOVER
-// =========================================================
 
 function removeFromCart(index) {
+  changeQuantity(index, -1);
+}
 
-  if (!products[index]) {
+// A foto do sabor "voa" até o botão Meu pedido
+function flyToCart(sourceImage) {
+  if (reducedMotion || !sourceImage || sourceImage.dataset.broken) {
     return;
   }
 
-  if (cart[index] > 0) {
-    cart[index]--;
+  const target = document.getElementById("navCart");
+
+  if (!target) {
+    return;
   }
 
-  updateQuantityDisplay(index);
+  const from = sourceImage.getBoundingClientRect();
+  const to = target.getBoundingClientRect();
 
-  renderCart();
+  if (from.bottom < 0 || from.top > window.innerHeight) {
+    return;
+  }
 
-  updateTotal();
+  const clone = document.createElement("img");
+
+  clone.className = "fly";
+  clone.src = sourceImage.currentSrc || sourceImage.src;
+  clone.alt = "";
+  clone.style.left = from.left + from.width / 2 - 28 + "px";
+  clone.style.top = from.top + from.height / 2 - 28 + "px";
+
+  document.body.appendChild(clone);
+
+  const dx = to.left + to.width / 2 - (from.left + from.width / 2);
+  const dy = to.top + to.height / 2 - (from.top + from.height / 2);
+
+  requestAnimationFrame(function () {
+    requestAnimationFrame(function () {
+      clone.style.transform =
+        "translate(" + dx + "px," + dy + "px) scale(.25)";
+      clone.style.opacity = ".15";
+    });
+  });
+
+  setTimeout(function () {
+    clone.remove();
+
+    const badge = document.getElementById("cartBadge");
+
+    if (badge) {
+      badge.classList.remove("bump");
+      void badge.offsetWidth;
+      badge.classList.add("bump");
+    }
+  }, 760);
 }
 
 // =========================================================
-// PRODUTOS SELECIONADOS
+// PRODUTOS SELECIONADOS E VALORES
 // =========================================================
 
 function getSelectedProducts() {
-
   return products
-    .map(function(product, index) {
-
+    .map(function (product, index) {
       return {
         product: product,
-        quantity: cart[index]
+        quantity: cart[index],
+        index: index
       };
-
     })
-    .filter(function(item) {
-
+    .filter(function (item) {
       return item.quantity > 0;
-
     });
 }
 
-// =========================================================
-// SUBTOTAL
-// =========================================================
-
 function getSubtotal() {
-
-  return getSelectedProducts()
-    .reduce(
-      function(total, item) {
-
-        return total +
-          item.product.price *
-          item.quantity;
-
-      },
-      0
-    );
+  return getSelectedProducts().reduce(function (total, item) {
+    return total + item.product.price * item.quantity;
+  }, 0);
 }
 
-// =========================================================
-// TIPO DE PEDIDO
-// =========================================================
+function getItemCount() {
+  return getSelectedProducts().reduce(function (total, item) {
+    return total + item.quantity;
+  }, 0);
+}
 
 function getOrderType() {
+  const selected = document.querySelector('input[name="orderType"]:checked');
 
-  const selected =
-    document.querySelector(
-      'input[name="orderType"]:checked'
-    );
-
-  if (!selected) {
-    return "delivery";
-  }
-
-  return selected.value;
+  return selected ? selected.value : "delivery";
 }
 
-// =========================================================
-// TAXA
-// =========================================================
+function getCity() {
+  const city = document.getElementById("city");
 
+  return city ? city.value : "";
+}
+
+// Entrega em Santa Cruz das Palmeiras: valor combinado depois
+function isDeliveryToCombine() {
+  return getOrderType() === "delivery" && getCity() === CITY_SCP;
+}
+
+// Taxa numérica que entra no total.
+// Só Tambaú tem taxa fixa. Santa Cruz das Palmeiras retorna 0
+// porque o valor ainda será combinado (nunca é somado ao total).
 function getDeliveryFee() {
-
-  if (
-    getOrderType() === "delivery"
-  ) {
+  if (getOrderType() === "delivery" && getCity() === CITY_TAMBAU) {
     return DELIVERY_FEE;
   }
 
   return 0;
 }
 
-// =========================================================
-// TOTAL
-// =========================================================
-
 function getTotal() {
+  return getSubtotal() + getDeliveryFee();
+}
 
-  return getSubtotal() +
-    getDeliveryFee();
+// Texto da linha "Entrega" no resumo
+function getDeliveryLabel() {
+  if (getOrderType() === "pickup") {
+    return "Sem taxa";
+  }
+
+  if (isDeliveryToCombine()) {
+    return TEXT_DELIVERY_TO_COMBINE;
+  }
+
+  if (getCity() === CITY_TAMBAU) {
+    return money(DELIVERY_FEE);
+  }
+
+  return "Informe a cidade";
 }
 
 // =========================================================
 // CARRINHO
 // =========================================================
 
-function renderCart() {
+const renderedCartItems = new Set();
 
+function renderCart() {
   if (!cartContainer) {
     return;
   }
 
-  const selected =
-    getSelectedProducts();
+  const selected = getSelectedProducts();
 
   if (selected.length === 0) {
+    renderedCartItems.clear();
 
-    cartContainer.innerHTML = `
-      <p class="empty">
-        Seu carrinho está vazio. 💗
-      </p>
-    `;
+    cartContainer.innerHTML =
+      '<p class="empty">Seu carrinho está vazio. 💗</p>';
 
     return;
   }
 
   cartContainer.innerHTML = "";
 
-  selected.forEach(
-    function(item) {
+  const stillInCart = new Set();
 
-      const cartItem =
-        document.createElement("div");
+  selected.forEach(function (item) {
+    const key = String(item.product.id);
 
-      cartItem.className =
-        "cart-item";
+    stillInCart.add(key);
 
-      const subtotal =
-        item.product.price *
-        item.quantity;
+    const row = document.createElement("div");
 
-      cartItem.innerHTML = `
-        <div class="cart-item-info">
+    row.className = "cart-item";
 
-          <strong>
-            ${escapeHtml(item.product.name)}
-          </strong>
-
-        </div>
-
-        <div class="cart-item-total">
-
-          <strong>
-            ${money(subtotal)}
-          </strong>
-
-        </div>
-      `;
-
-      cartContainer.appendChild(
-        cartItem
-      );
+    if (!renderedCartItems.has(key)) {
+      row.classList.add("new");
     }
-  );
+
+    const thumb = buildImage(
+      resolveImage(item.product.img),
+      item.product.name,
+      "cart-thumb"
+    );
+
+    thumb.loading = "eager";
+
+    row.appendChild(thumb);
+
+    const info = document.createElement("div");
+
+    info.className = "cart-item-info";
+    info.innerHTML = `
+      <strong>${escapeHtml(item.product.name)}</strong>
+      <small>${item.quantity} × ${money(item.product.price)}</small>
+    `;
+
+    row.appendChild(info);
+
+    const side = document.createElement("div");
+
+    side.className = "cart-item-side";
+    side.innerHTML = `
+      <span class="cart-item-total">${money(
+        item.product.price * item.quantity
+      )}</span>
+      <div class="qty" role="group"
+        aria-label="Quantidade de ${escapeHtml(item.product.name)}">
+        <button type="button" onclick="changeQuantity(${item.index}, -1)"
+          aria-label="Remover um ${escapeHtml(item.product.name)}">−</button>
+        <span>${item.quantity}</span>
+        <button type="button" onclick="changeQuantity(${item.index}, 1)"
+          aria-label="Adicionar mais um ${escapeHtml(item.product.name)}">+</button>
+      </div>
+    `;
+
+    row.appendChild(side);
+    cartContainer.appendChild(row);
+  });
+
+  renderedCartItems.clear();
+
+  stillInCart.forEach(function (key) {
+    renderedCartItems.add(key);
+  });
 }
 
 // =========================================================
-// ATUALIZAR TOTAL
+// ATUALIZAR TOTAIS
 // =========================================================
 
 function updateTotal() {
-
-  const subtotal =
-    getSubtotal();
-
-  const delivery =
-    getDeliveryFee();
-
-  const total =
-    subtotal + delivery;
+  const subtotal = getSubtotal();
+  const total = getTotal();
+  const combine = isDeliveryToCombine();
 
   if (subtotalElement) {
-    subtotalElement.textContent =
-      money(subtotal);
+    subtotalElement.textContent = money(subtotal);
   }
 
   if (deliveryElement) {
-    deliveryElement.textContent =
-      money(delivery);
+    deliveryElement.textContent = getDeliveryLabel();
   }
 
   if (totalElement) {
-    totalElement.textContent =
-      money(total);
+    totalElement.textContent = money(total);
   }
+
+  // Santa Cruz das Palmeiras: o total mostra só os geladinhos
+  const totalLabel = document.getElementById("totalLabel");
+  const totalNote = document.getElementById("totalNote");
+
+  if (totalLabel) {
+    totalLabel.textContent = combine ? "Total dos geladinhos" : "Total";
+  }
+
+  if (totalNote) {
+    totalNote.hidden = !combine;
+    totalNote.textContent = combine
+      ? "O valor da entrega será combinado depois e não está incluído neste total."
+      : "";
+  }
+
+  // Aviso dentro do formulário de entrega
+  const notice = document.getElementById("deliveryNotice");
+
+  if (notice) {
+    if (getOrderType() !== "delivery") {
+      notice.hidden = true;
+    } else if (combine) {
+      notice.hidden = false;
+      notice.textContent = TEXT_DELIVERY_TO_COMBINE;
+    } else if (getCity() === CITY_TAMBAU) {
+      notice.hidden = false;
+      notice.textContent = "Taxa de entrega em Tambaú: " + money(DELIVERY_FEE);
+    } else {
+      notice.hidden = true;
+    }
+  }
+
+  updateCartIndicators(subtotal);
+}
+
+// Contador do cabeçalho e barra do pedido (celular)
+function updateCartIndicators(subtotal) {
+  const count = getItemCount();
+
+  const badge = document.getElementById("cartBadge");
+  const bar = document.getElementById("cartBar");
+  const barCount = document.getElementById("cartBarCount");
+  const barTotal = document.getElementById("cartBarTotal");
+
+  if (badge) {
+    badge.textContent = count;
+  }
+
+  if (barCount) {
+    barCount.textContent = count === 1 ? "1 item" : count + " itens";
+  }
+
+  if (barTotal) {
+    barTotal.textContent = money(subtotal);
+  }
+
+  if (bar) {
+    bar.dataset.hasItems = count > 0 ? "1" : "";
+    syncCartBar();
+  }
+
+  document.body.classList.toggle("has-cart-bar", count > 0);
+}
+
+let orderSectionVisible = false;
+
+function syncCartBar() {
+  const bar = document.getElementById("cartBar");
+
+  if (!bar) {
+    return;
+  }
+
+  bar.classList.toggle(
+    "on",
+    bar.dataset.hasItems === "1" && !orderSectionVisible
+  );
+}
+
+function setupCartBar() {
+  const section = document.getElementById("pedido");
+
+  if (!section || !("IntersectionObserver" in window)) {
+    return;
+  }
+
+  new IntersectionObserver(function (entries) {
+    orderSectionVisible = entries[0].isIntersecting;
+    syncCartBar();
+  }).observe(section);
 }
 
 // =========================================================
 // ÁREA DO ENDEREÇO
 // =========================================================
 
-function getAddressContainer() {
-
-  const city =
-    document.getElementById("city");
-
-  const street =
-    document.getElementById("street");
-
-  const number =
-    document.getElementById("number");
-
-  const neighborhood =
-    document.getElementById(
-      "neighborhood"
-    );
-
-  const fields = [
-    city,
-    street,
-    number,
-    neighborhood
-  ].filter(Boolean);
-
-  if (fields.length === 0) {
-    return null;
-  }
-
-  const possibleContainer =
-    fields[0].closest(
-      ".address-row, .address-fields, .address-section, .address-container, [data-address]"
-    );
-
-  if (possibleContainer) {
-    return possibleContainer;
-  }
-
-  let parent =
-    fields[0].parentElement;
-
-  while (
-    parent &&
-    parent !== document.body
-  ) {
-
-    const containsAll =
-      fields.every(
-        function(field) {
-
-          return parent.contains(field);
-
-        }
-      );
-
-    if (containsAll) {
-      return parent;
-    }
-
-    parent =
-      parent.parentElement;
-  }
-
-  return null;
-}
-
-// =========================================================
-// MOSTRAR / ESCONDER ENDEREÇO
-// =========================================================
-
 function updateAddressVisibility() {
+  const pickup = getOrderType() === "pickup";
 
-  const type =
-    getOrderType();
+  const wrapper = document.getElementById("deliveryFields");
 
-  const city =
-    document.getElementById("city");
+  const city = document.getElementById("city");
+  const street = document.getElementById("street");
+  const number = document.getElementById("number");
+  const neighborhood = document.getElementById("neighborhood");
 
-  const street =
-    document.getElementById("street");
+  const fields = [city, street, number, neighborhood].filter(Boolean);
 
-  const number =
-    document.getElementById("number");
+  if (wrapper) {
+    wrapper.style.display = pickup ? "none" : "";
+  }
 
-  const neighborhood =
-    document.getElementById(
-      "neighborhood"
-    );
+  if (pickup) {
+    fields.forEach(function (field) {
+      field.disabled = true;
+      field.value = "";
+      field.classList.remove("field-error");
+    });
 
-  const fields = [
-    city,
-    street,
-    number,
-    neighborhood
-  ].filter(Boolean);
+    return;
+  }
 
-  const addressContainer =
-    getAddressContainer();
+  fields.forEach(function (field) {
+    field.disabled = false;
+  });
 
-  if (type === "pickup") {
+  const hasCity = !!(city && city.value);
 
-    if (addressContainer) {
+  if (street) {
+    street.disabled = !hasCity;
+  }
 
-      addressContainer.style.display =
-        "none";
-
-    } else {
-
-      fields.forEach(
-        function(field) {
-
-          field.style.display =
-            "none";
-
-          field.disabled =
-            true;
-
-          field.value =
-            "";
-
-        }
-      );
-    }
-
-    fields.forEach(
-      function(field) {
-
-        field.disabled =
-          true;
-
-        field.value =
-          "";
-
-      }
-    );
-
-  } else {
-
-    if (addressContainer) {
-
-      addressContainer.style.display =
-        "";
-
-    } else {
-
-      fields.forEach(
-        function(field) {
-
-          field.style.display =
-            "";
-
-        }
-      );
-    }
-
-    fields.forEach(
-      function(field) {
-
-        field.disabled =
-          false;
-
-      }
-    );
-
-    if (street) {
-
-      street.disabled =
-        !city || !city.value;
-
-    }
-
-    if (neighborhood) {
-
-      neighborhood.disabled =
-        !city || !city.value;
-
-    }
+  if (neighborhood) {
+    neighborhood.disabled = !hasCity;
   }
 }
-
-// =========================================================
-// ENTREGA / RETIRADA
-// =========================================================
 
 function updateOrderType() {
-
-  const type =
-    getOrderType();
-
   updateAddressVisibility();
-
   updateTotal();
-
-  console.log(
-    "📦 Tipo de pedido:",
-    type
-  );
 }
 
-// =========================================================
-// ENDEREÇO
-// =========================================================
-
 function getAddress() {
-
-  if (
-    getOrderType() === "pickup"
-  ) {
-
+  if (getOrderType() === "pickup") {
     return "Retirada no local";
   }
 
-  const city =
-    document.getElementById("city");
-
-  const street =
-    document.getElementById("street");
-
-  const number =
-    document.getElementById("number");
-
-  const neighborhood =
-    document.getElementById(
-      "neighborhood"
-    );
+  const street = document.getElementById("street");
+  const number = document.getElementById("number");
+  const neighborhood = document.getElementById("neighborhood");
 
   return [
-    city
-      ? city.value
-      : "",
-
-    street
-      ? street.value.trim()
-      : "",
-
-    number
-      ? number.value.trim()
-      : "",
-
-    neighborhood
-      ? neighborhood.value.trim()
-      : ""
-
+    getCity(),
+    street ? street.value.trim() : "",
+    number ? number.value.trim() : "",
+    neighborhood ? neighborhood.value.trim() : ""
   ]
-    .filter(
-      function(value) {
-
-        return value !== "";
-
-      }
-    )
+    .filter(function (value) {
+      return value !== "";
+    })
     .join(", ");
 }
 
@@ -916,31 +895,15 @@ function getAddress() {
 // =========================================================
 
 function buildOrderItems() {
-
-  return getSelectedProducts()
-    .map(function(item) {
-
-      return {
-
-        id:
-          item.product.id,
-
-        nome:
-          item.product.name,
-
-        quantidade:
-          item.quantity,
-
-        preco:
-          item.product.price,
-
-        subtotal:
-          item.product.price *
-          item.quantity
-
-      };
-
-    });
+  return getSelectedProducts().map(function (item) {
+    return {
+      id: item.product.id,
+      nome: item.product.name,
+      quantidade: item.quantity,
+      preco: item.product.price,
+      subtotal: item.product.price * item.quantity
+    };
+  });
 }
 
 // =========================================================
@@ -948,147 +911,74 @@ function buildOrderItems() {
 // =========================================================
 
 function validateOrder() {
+  if (getSelectedProducts().length === 0) {
+    showToast("Adicione pelo menos um sabor ao pedido.", "error");
 
-  const selected =
-    getSelectedProducts();
+    const section = document.getElementById("cardapio");
 
-  if (selected.length === 0) {
-
-    alert(
-      "Adicione pelo menos um sabor ao carrinho. 🍓"
-    );
-
-    return false;
-  }
-
-  const nameInput =
-    document.getElementById(
-      "customerName"
-    );
-
-  const phoneInput =
-    document.getElementById(
-      "customerPhone"
-    );
-
-  const paymentInput =
-    document.getElementById(
-      "paymentMethod"
-    );
-
-  const name =
-    nameInput
-      ? nameInput.value.trim()
-      : "";
-
-  const phone =
-    phoneInput
-      ? phoneInput.value.trim()
-      : "";
-
-  const payment =
-    paymentInput
-      ? paymentInput.value
-      : "";
-
-  if (!name) {
-
-    alert(
-      "Digite seu nome."
-    );
-
-    if (nameInput) {
-      nameInput.focus();
+    if (section) {
+      section.scrollIntoView({
+        behavior: reducedMotion ? "auto" : "smooth"
+      });
     }
 
     return false;
   }
 
-  if (!phone) {
+  const nameInput = document.getElementById("customerName");
+  const phoneInput = document.getElementById("customerPhone");
+  const paymentInput = document.getElementById("paymentMethod");
 
-    alert(
-      "Digite seu telefone."
-    );
+  if (getOrderType() === "delivery") {
+    const city = document.getElementById("city");
+    const street = document.getElementById("street");
+    const number = document.getElementById("number");
+    const neighborhood = document.getElementById("neighborhood");
 
-    if (phoneInput) {
-      phoneInput.focus();
+    if (!city.value) {
+      return failField("Selecione a cidade para a entrega.", city);
     }
 
-    return false;
+    if (!street.value.trim()) {
+      return failField("Informe a rua da entrega.", street);
+    }
+
+    if (!number.value.trim()) {
+      return failField("Informe o número do endereço.", number);
+    }
+
+    if (!neighborhood.value.trim()) {
+      return failField("Informe o bairro.", neighborhood);
+    }
   }
 
-  if (!payment) {
-
-    alert(
-      "Selecione a forma de pagamento."
-    );
-
-    if (paymentInput) {
-      paymentInput.focus();
-    }
-
-    return false;
+  if (!nameInput.value.trim()) {
+    return failField("Digite seu nome.", nameInput);
   }
 
-  if (
-    getOrderType() === "delivery"
-  ) {
+  if (!phoneInput.value.trim()) {
+    return failField("Digite seu telefone.", phoneInput);
+  }
 
-    const city =
-      document.getElementById("city");
+  if (phoneInput.value.replace(/\D/g, "").length < 10) {
+    return failField("Digite um telefone com DDD.", phoneInput);
+  }
 
-    const street =
-      document.getElementById("street");
-
-    const number =
-      document.getElementById("number");
-
-    const neighborhood =
-      document.getElementById(
-        "neighborhood"
-      );
-
-    if (
-      !city ||
-      !city.value ||
-      !street ||
-      !street.value.trim() ||
-      !number ||
-      !number.value.trim() ||
-      !neighborhood ||
-      !neighborhood.value.trim()
-    ) {
-
-      alert(
-        "Preencha todos os campos do endereço para a entrega."
-      );
-
-      return false;
-    }
+  if (!paymentInput.value) {
+    return failField("Selecione a forma de pagamento.", paymentInput);
   }
 
   return true;
 }
 
-// =========================================================
-// FORMA DE PAGAMENTO
-// =========================================================
-
 function paymentLabel(payment) {
-
   const labels = {
-
     pix: "PIX",
-
     dinheiro: "Dinheiro",
-
     cartao: "Cartão"
-
   };
 
-  return labels[payment] ||
-    payment ||
-    "Não informado";
+  return labels[payment] || payment || "Não informado";
 }
 
 // =========================================================
@@ -1096,506 +986,238 @@ function paymentLabel(payment) {
 // =========================================================
 
 function getStatusPedidoInfo(status) {
-
   const statusInfo = {
-
     pendente: {
-      titulo: "Pedido recebido! 💗",
-      mensagem:
-        "Seu pedido foi recebido e está aguardando confirmação.",
+      titulo: "Pedido recebido!",
+      mensagem: "Seu pedido foi recebido e está aguardando confirmação.",
       icone: "🕐"
     },
-
     preparo: {
-      titulo:
-        "Seu pedido está sendo preparado! 🍓",
+      titulo: "Seu pedido está sendo preparado!",
       mensagem:
         "Já começamos a preparar seus geladinhos. Em breve estará prontinho!",
       icone: "👩‍🍳"
     },
-
     entrega: {
-      titulo:
-        "Seu pedido saiu para entrega! 🛵",
+      titulo: "Seu pedido saiu para entrega!",
       mensagem:
         "Seu pedido já está a caminho. Fique de olho porque ele chegará em breve!",
       icone: "🛵"
     },
-
     entregue: {
-      titulo:
-        "Pedido entregue! 💕",
-      mensagem:
-        "Seu pedido foi entregue. Esperamos que você aproveite muito!",
+      titulo: "Pedido entregue!",
+      mensagem: "Seu pedido foi entregue. Esperamos que você aproveite muito!",
       icone: "💗"
     },
-
     cancelado: {
-      titulo:
-        "Pedido cancelado 😔",
+      titulo: "Pedido cancelado",
       mensagem:
         "Infelizmente, seu pedido foi cancelado. Entre em contato com a Gela Gourmet se precisar de ajuda.",
       icone: "❌"
     }
-
   };
 
   return (
     statusInfo[status] || {
       titulo: "Status atualizado",
-      mensagem:
-        "Seu pedido teve uma atualização.",
+      mensagem: "Seu pedido teve uma atualização.",
       icone: "📦"
     }
   );
 }
 
-// =========================================================
-// SALVAR PEDIDO
-// =========================================================
-
-function salvarPedidoAcompanhado(
-  pedidoId,
-  telefone,
-  status,
-  token
-) {
-
+function salvarPedidoAcompanhado(pedidoId, telefone, status, token) {
   const dados = {
-
-    pedidoId:
-      pedidoId,
-
-    telefone:
-      telefone,
-
-    status:
-      status || "pendente",
-
-    token:
-      token || null,
-
-    salvoEm:
-      Date.now()
-
+    pedidoId: pedidoId,
+    telefone: telefone,
+    status: status || "pendente",
+    token: token || null,
+    salvoEm: Date.now()
   };
 
-  localStorage.setItem(
-    "gelaGourmetPedido",
-    JSON.stringify(dados)
-  );
+  localStorage.setItem("gelaGourmetPedido", JSON.stringify(dados));
 
-  pedidoAcompanhado =
-    dados;
-
-  statusAnteriorPedido =
-    dados.status;
+  pedidoAcompanhado = dados;
+  statusAnteriorPedido = dados.status;
 }
 
-// =========================================================
-// RECUPERAR PEDIDO
-// =========================================================
-
 function recuperarPedidoAcompanhado() {
-
   try {
-
-    const salvo =
-      localStorage.getItem(
-        "gelaGourmetPedido"
-      );
+    const salvo = localStorage.getItem("gelaGourmetPedido");
 
     if (!salvo) {
       return null;
     }
 
-    const dados =
-      JSON.parse(salvo);
+    const dados = JSON.parse(salvo);
 
-    if (
-      !dados ||
-      !dados.pedidoId
-    ) {
+    if (!dados || !dados.pedidoId) {
       return null;
     }
 
     return dados;
-
   } catch (error) {
-
-    console.error(
-      "Erro ao recuperar pedido:",
-      error
-    );
-
+    console.error("Erro ao recuperar pedido:", error);
     return null;
   }
 }
 
-// =========================================================
-// CONSULTAR STATUS
-// =========================================================
-
 async function consultarStatusPedido() {
-
-  if (!pedidoAcompanhado) {
-    return;
-  }
-
-  if (
-    !pedidoAcompanhado.telefone
-  ) {
+  if (!pedidoAcompanhado || !pedidoAcompanhado.telefone || !supabaseClient) {
     return;
   }
 
   try {
-
-    const result =
-      await supabaseClient.rpc(
-        "consultar_status_pedido",
-        {
-          p_pedido_id:
-            pedidoAcompanhado.pedidoId,
-
-          p_telefone:
-            pedidoAcompanhado.telefone
-        }
-      );
+    const result = await supabaseClient.rpc("consultar_status_pedido", {
+      p_pedido_id: pedidoAcompanhado.pedidoId,
+      p_telefone: pedidoAcompanhado.telefone
+    });
 
     if (result.error) {
-
-      console.error(
-        "Erro ao consultar status:",
-        result.error
-      );
-
+      console.error("Erro ao consultar status:", result.error);
       return;
     }
 
-    const dados =
-      result.data;
+    const dados = result.data;
 
-    if (
-      !dados ||
-      !Array.isArray(dados) ||
-      dados.length === 0
-    ) {
+    if (!dados || !Array.isArray(dados) || dados.length === 0) {
       return;
     }
 
-    const novoStatus =
-      dados[0].status;
+    const novoStatus = dados[0].status;
 
-    if (
-      statusAnteriorPedido &&
-      novoStatus !==
-        statusAnteriorPedido
-    ) {
-
-      mostrarAtualizacaoStatus(
-        novoStatus
-      );
+    if (statusAnteriorPedido && novoStatus !== statusAnteriorPedido) {
+      mostrarAtualizacaoStatus(novoStatus);
     }
 
-    statusAnteriorPedido =
-      novoStatus;
-
-    pedidoAcompanhado.status =
-      novoStatus;
+    statusAnteriorPedido = novoStatus;
+    pedidoAcompanhado.status = novoStatus;
 
     localStorage.setItem(
       "gelaGourmetPedido",
-      JSON.stringify(
-        pedidoAcompanhado
-      )
+      JSON.stringify(pedidoAcompanhado)
     );
-
   } catch (error) {
-
-    console.error(
-      "Erro ao acompanhar pedido:",
-      error
-    );
+    console.error("Erro ao acompanhar pedido:", error);
   }
 }
 
-// =========================================================
-// INICIAR ACOMPANHAMENTO
-// =========================================================
-
 function iniciarAcompanhamentoPedido() {
-
   if (!pedidoAcompanhado) {
     return;
   }
 
   if (intervaloStatusPedido) {
-
-    clearInterval(
-      intervaloStatusPedido
-    );
+    clearInterval(intervaloStatusPedido);
   }
 
   consultarStatusPedido();
 
-  intervaloStatusPedido =
-    setInterval(
-      consultarStatusPedido,
-      10000
-    );
+  intervaloStatusPedido = setInterval(consultarStatusPedido, 10000);
 }
 
-// =========================================================
-// PARAR ACOMPANHAMENTO
-// =========================================================
-
 function pararAcompanhamentoPedido() {
-
   if (intervaloStatusPedido) {
-
-    clearInterval(
-      intervaloStatusPedido
-    );
-
-    intervaloStatusPedido =
-      null;
+    clearInterval(intervaloStatusPedido);
+    intervaloStatusPedido = null;
   }
 }
 
-// =========================================================
-// ATUALIZAÇÃO DE STATUS
-// =========================================================
+function mostrarAtualizacaoStatus(status) {
+  const info = getStatusPedidoInfo(status);
 
-function mostrarAtualizacaoStatus(
-  status
-) {
-
-  const info =
-    getStatusPedidoInfo(status);
-
-  const existente =
-    document.querySelector(
-      ".status-update-overlay"
-    );
+  const existente = document.querySelector(".status-update-overlay");
 
   if (existente) {
     existente.remove();
   }
 
-  const overlay =
-    document.createElement("div");
+  const overlay = document.createElement("div");
 
-  overlay.className =
-    "status-update-overlay";
+  overlay.className = "status-update-overlay";
 
   overlay.innerHTML = `
-    <div class="status-update-modal">
-
-      <button
-        type="button"
-        class="status-update-close"
-        aria-label="Fechar"
-      >
-        ×
-      </button>
-
-      <div class="status-update-icon">
-        ${info.icone}
-      </div>
-
-      <span class="status-update-small">
-        ATUALIZAÇÃO DO PEDIDO
-      </span>
-
-      <h2>
-        ${escapeHtml(info.titulo)}
-      </h2>
-
-      <p>
-        ${escapeHtml(info.mensagem)}
-      </p>
-
+    <div class="status-update-modal" role="dialog" aria-modal="true">
+      <button type="button" class="status-update-close" aria-label="Fechar">×</button>
+      <div class="status-update-icon">${info.icone}</div>
+      <span class="status-update-small">Atualização do pedido</span>
+      <h2>${escapeHtml(info.titulo)}</h2>
+      <p>${escapeHtml(info.mensagem)}</p>
       <div class="status-update-number">
-
-        Pedido
-
-        <strong>
-          #${escapeHtml(
-            pedidoAcompanhado.pedidoId
-          )}
-        </strong>
-
+        Pedido <strong>#${escapeHtml(pedidoAcompanhado.pedidoId)}</strong>
       </div>
-
-      <button
-        type="button"
-        class="status-update-button"
-        id="fecharStatusUpdate"
-      >
-        Entendi 💗
-      </button>
-
+      <button type="button" class="status-update-button" id="fecharStatusUpdate">Entendi</button>
     </div>
   `;
 
-  document.body.appendChild(
-    overlay
-  );
-
-  document.body.style.overflow =
-    "hidden";
+  document.body.appendChild(overlay);
+  document.body.style.overflow = "hidden";
 
   function fechar() {
-
     overlay.remove();
-
-    document.body.style.overflow =
-      "";
+    document.body.style.overflow = "";
   }
 
-  const close =
-    overlay.querySelector(
-      ".status-update-close"
-    );
+  overlay
+    .querySelector(".status-update-close")
+    .addEventListener("click", fechar);
 
-  const button =
-    overlay.querySelector(
-      "#fecharStatusUpdate"
-    );
+  overlay
+    .querySelector("#fecharStatusUpdate")
+    .addEventListener("click", fechar);
 
-  if (close) {
-
-    close.addEventListener(
-      "click",
-      fechar
-    );
-  }
-
-  if (button) {
-
-    button.addEventListener(
-      "click",
-      fechar
-    );
-  }
-
-  overlay.addEventListener(
-    "click",
-    function(event) {
-
-      if (
-        event.target === overlay
-      ) {
-        fechar();
-      }
-
+  overlay.addEventListener("click", function (event) {
+    if (event.target === overlay) {
+      fechar();
     }
-  );
+  });
 }
 
-// =========================================================
-// MOSTRAR PEDIDO EM ANDAMENTO
-// =========================================================
-
 function mostrarPedidoEmAndamento() {
-
   if (!pedidoAcompanhado) {
     return;
   }
 
-  const existente =
-    document.querySelector(
-      ".pedido-acompanhamento"
-    );
+  const existente = document.querySelector(".pedido-acompanhamento");
 
   if (existente) {
     existente.remove();
   }
 
-  const info =
-    getStatusPedidoInfo(
-      pedidoAcompanhado.status ||
-        "pendente"
-    );
+  const info = getStatusPedidoInfo(pedidoAcompanhado.status || "pendente");
 
-  const acompanhamento =
-    document.createElement("div");
+  const acompanhamento = document.createElement("div");
 
-  acompanhamento.className =
-    "pedido-acompanhamento";
+  acompanhamento.className = "pedido-acompanhamento";
 
   acompanhamento.innerHTML = `
-    <div class="pedido-acompanhamento-icon">
-      ${info.icone}
-    </div>
-
+    <div class="pedido-acompanhamento-icon">${info.icone}</div>
     <div class="pedido-acompanhamento-info">
-
-      <span>
-        PEDIDO #${escapeHtml(
-          pedidoAcompanhado.pedidoId
-        )}
-      </span>
-
-      <strong>
-        ${escapeHtml(info.titulo)}
-      </strong>
-
-      <small>
-        ${escapeHtml(info.mensagem)}
-      </small>
-
+      <span>Pedido #${escapeHtml(pedidoAcompanhado.pedidoId)}</span>
+      <strong>${escapeHtml(info.titulo)}</strong>
+      <small>${escapeHtml(info.mensagem)}</small>
     </div>
-
-    <button
-      type="button"
-      id="fecharAcompanhamento"
-      aria-label="Fechar acompanhamento"
-    >
-      ×
-    </button>
+    <button type="button" id="fecharAcompanhamento" aria-label="Fechar acompanhamento">×</button>
   `;
 
-  document.body.appendChild(
-    acompanhamento
-  );
+  document.body.appendChild(acompanhamento);
 
-  const fechar =
-    acompanhamento.querySelector(
-      "#fecharAcompanhamento"
-    );
-
-  if (fechar) {
-
-    fechar.addEventListener(
-      "click",
-      function() {
-
-        acompanhamento.remove();
-
-      }
-    );
-  }
+  acompanhamento
+    .querySelector("#fecharAcompanhamento")
+    .addEventListener("click", function () {
+      acompanhamento.remove();
+    });
 }
 
-// =========================================================
-// VERIFICAR PEDIDO SALVO
-// =========================================================
-
 function verificarPedidoSalvo() {
-
-  const pedido =
-    recuperarPedidoAcompanhado();
+  const pedido = recuperarPedidoAcompanhado();
 
   if (!pedido) {
     return;
   }
 
-  pedidoAcompanhado =
-    pedido;
-
-  statusAnteriorPedido =
-    pedido.status || null;
+  pedidoAcompanhado = pedido;
+  statusAnteriorPedido = pedido.status || null;
 
   iniciarAcompanhamentoPedido();
 }
@@ -1609,261 +1231,195 @@ function mostrarPedidoSucesso(
   token,
   itens,
   total,
-  whatsappUrl
+  whatsappUrl,
+  entrega
 ) {
+  const itensHtml = itens
+    .map(function (item) {
+      return `
+        <div class="success-item">
+          <span>${item.quantidade}× ${escapeHtml(item.nome)}</span>
+          <strong>${money(item.subtotal)}</strong>
+        </div>
+      `;
+    })
+    .join("");
 
-  const itensHtml =
-    itens
-      .map(function(item) {
+  const combine = !!(entrega && entrega.combinar);
 
-        return `
-          <div class="success-item">
+  const modal = document.createElement("div");
 
-            <span>
-              ${item.quantidade}x
-              ${escapeHtml(item.nome)}
-            </span>
-
-            <strong>
-              ${money(item.subtotal)}
-            </strong>
-
-          </div>
-        `;
-
-      })
-      .join("");
-
-  const modal =
-    document.createElement("div");
-
-  modal.className =
-    "success-overlay";
+  modal.className = "success-overlay";
 
   modal.innerHTML = `
+    <div class="success-modal" role="dialog" aria-modal="true">
+      <button type="button" class="success-close" aria-label="Fechar">×</button>
 
-    <div class="success-modal">
+      <div class="success-icon">✓</div>
 
-      <button
-        type="button"
-        class="success-close"
-        aria-label="Fechar"
-      >
-        ×
-      </button>
+      <span class="success-small">Pedido recebido</span>
 
-      <div class="success-icon">
-        ✓
-      </div>
-
-      <span class="success-small">
-        PEDIDO RECEBIDO
-      </span>
-
-      <h2>
-        Tudo certinho! 💗
-      </h2>
+      <h2>Tudo certo!</h2>
 
       <p class="success-message">
-        Seu pedido foi registrado com sucesso.
-        Obrigada por escolher a Gela Gourmet!
+        Seu pedido foi registrado. Obrigada por escolher a Gela Gourmet!
       </p>
 
       <div class="success-number">
-
-        <span>
-          Número do pedido
-        </span>
-
-        <strong>
-          #${escapeHtml(pedidoId)}
-        </strong>
-
+        <span>Número do pedido</span>
+        <strong>#${escapeHtml(pedidoId)}</strong>
       </div>
 
-      <div class="success-items">
-        ${itensHtml}
+      <div class="success-items">${itensHtml}</div>
+
+      <div class="success-sum">
+        <span>Entrega</span>
+        <strong>${escapeHtml(entrega ? entrega.texto : "")}</strong>
       </div>
 
       <div class="success-total">
-
-        <span>
-          Total
-        </span>
-
-        <strong>
-          ${money(total)}
-        </strong>
-
+        <span>${combine ? "Total dos geladinhos" : "Total"}</span>
+        <strong>${money(total)}</strong>
       </div>
+
+      ${
+        combine
+          ? '<p class="success-note">' + escapeHtml(NOTE_SCP) + ".</p>"
+          : ""
+      }
 
       <div class="success-actions">
-
-        <button
-          type="button"
-          class="success-track"
-          id="successTrack"
-        >
-          Acompanhar pedido
-        </button>
-
-        <button
-          type="button"
-          class="success-whatsapp"
-          id="successWhatsapp"
-        >
-          Abrir WhatsApp novamente
-        </button>
-
-        <button
-          type="button"
-          class="success-home"
-          id="successHome"
-        >
-          Voltar para o cardápio
-        </button>
-
+        <button type="button" class="success-track" id="successTrack">Acompanhar pedido</button>
+        <button type="button" class="success-whatsapp" id="successWhatsapp">Abrir WhatsApp novamente</button>
+        <button type="button" class="success-home" id="successHome">Voltar para os sabores</button>
       </div>
-
     </div>
   `;
 
-  document.body.appendChild(
-    modal
-  );
-
-  document.body.style.overflow =
-    "hidden";
-
-  // =====================================================
-  // FECHAR MODAL
-  // =====================================================
+  document.body.appendChild(modal);
+  document.body.style.overflow = "hidden";
 
   function fecharModal() {
-
     modal.remove();
-
-    document.body.style.overflow =
-      "";
+    document.body.style.overflow = "";
   }
 
-  const closeButton =
-    modal.querySelector(
-      ".success-close"
-    );
+  modal.querySelector(".success-close").addEventListener("click", fecharModal);
 
-  if (closeButton) {
+  modal.querySelector("#successHome").addEventListener("click", function () {
+    fecharModal();
 
-    closeButton.addEventListener(
-      "click",
-      fecharModal
-    );
-  }
+    const section = document.getElementById("cardapio");
 
-  const homeButton =
-    modal.querySelector(
-      "#successHome"
-    );
-
-  if (homeButton) {
-
-    homeButton.addEventListener(
-      "click",
-      fecharModal
-    );
-  }
-
-  modal.addEventListener(
-    "click",
-    function(event) {
-
-      if (
-        event.target === modal
-      ) {
-
-        fecharModal();
-      }
-
+    if (section) {
+      section.scrollIntoView({ behavior: reducedMotion ? "auto" : "smooth" });
     }
-  );
+  });
 
-  // =====================================================
-  // ACOMPANHAR PEDIDO
-  // =====================================================
+  modal.addEventListener("click", function (event) {
+    if (event.target === modal) {
+      fecharModal();
+    }
+  });
 
-  const trackButton =
-    modal.querySelector(
-      "#successTrack"
-    );
+  modal.querySelector("#successTrack").addEventListener("click", function () {
+    if (!token) {
+      showToast(
+        "O pedido foi criado, mas o banco não retornou o código de acompanhamento.",
+        "error"
+      );
 
-  if (trackButton) {
+      console.error("Token do pedido não encontrado.");
 
-    trackButton.addEventListener(
-      "click",
-      function() {
+      return;
+    }
 
-        if (!token) {
+    const dados = {
+      pedidoId: pedidoId,
+      token: token,
+      salvoEm: Date.now()
+    };
 
-          alert(
-            "O pedido foi criado, mas o banco não retornou o código de acompanhamento."
-          );
+    localStorage.setItem("gelaGourmetPedido", JSON.stringify(dados));
 
-          console.error(
-            "Token do pedido não encontrado."
-          );
+    window.location.href =
+      "acompanhar-pedido.html?token=" + encodeURIComponent(token);
+  });
 
-          return;
-        }
+  modal
+    .querySelector("#successWhatsapp")
+    .addEventListener("click", function () {
+      window.open(whatsappUrl, "_blank");
+    });
+}
 
-        const dados = {
+// =========================================================
+// MENSAGEM DO WHATSAPP
+// =========================================================
 
-          pedidoId:
-            pedidoId,
+function buildWhatsappMessage(data) {
+  let message = "🍓 *GELA GOURMET* 🍓\n\n";
 
-          token:
-            token,
+  message += "📦 *Pedido nº " + data.pedidoId + "*\n\n";
 
-          salvoEm:
-            Date.now()
+  message += "👤 *Cliente:* " + data.name + "\n";
+  message += "📞 *Telefone:* " + data.phone + "\n";
 
-        };
-
-        localStorage.setItem(
-          "gelaGourmetPedido",
-          JSON.stringify(dados)
-        );
-
-        window.location.href =
-          "acompanhar-pedido.html?token=" +
-          encodeURIComponent(token);
-
-      }
-    );
+  if (data.email) {
+    message += "✉️ *E-mail:* " + data.email + "\n";
   }
 
-  // =====================================================
-  // WHATSAPP
-  // =====================================================
+  message += "\n🍦 *Pedido:*\n";
 
-  const whatsappButton =
-    modal.querySelector(
-      "#successWhatsapp"
-    );
+  data.itens.forEach(function (item) {
+    message +=
+      "• " +
+      item.quantidade +
+      "x " +
+      item.nome +
+      " — " +
+      money(item.subtotal) +
+      "\n";
+  });
 
-  if (whatsappButton) {
+  message += "\n🛍️ *Subtotal:* " + money(data.subtotal) + "\n";
 
-    whatsappButton.addEventListener(
-      "click",
-      function() {
-
-        window.open(
-          whatsappUrl,
-          "_blank"
-        );
-
-      }
-    );
+  if (data.orderType === "delivery") {
+    if (data.combinar) {
+      // Santa Cruz das Palmeiras: nenhum valor numérico de entrega
+      message += "🚚 *Entrega:* " + TEXT_DELIVERY_TO_COMBINE + "\n";
+      message += "💰 *Total dos geladinhos:* " + money(data.total) + "\n\n";
+    } else {
+      message += "🚚 *Entrega:* " + money(DELIVERY_FEE) + "\n";
+      message += "💰 *Total:* " + money(data.total) + "\n\n";
+    }
+  } else {
+    message += "🏪 *Retirada:* R$ 0,00\n";
+    message += "💰 *Total:* " + money(data.total) + "\n\n";
   }
+
+  message += "💳 *Pagamento:* " + paymentLabel(data.payment) + "\n";
+
+  message +=
+    "📦 *Tipo:* " +
+    (data.orderType === "delivery" ? "Entrega" : "Retirada") +
+    "\n";
+
+  if (data.orderType === "delivery") {
+    message += "📍 *Endereço:* " + data.address + "\n";
+  }
+
+  if (data.combinar) {
+    message += "\n📌 *" + NOTE_SCP + "*\n";
+  }
+
+  if (data.note) {
+    message += "\n📝 *Observação:* " + data.note + "\n";
+  }
+
+  message += "\n💗 Obrigado por pedir na Gela Gourmet!";
+
+  return message;
 }
 
 // =========================================================
@@ -1871,769 +1427,319 @@ function mostrarPedidoSucesso(
 // =========================================================
 
 async function createOrder() {
-
   if (!validateOrder()) {
     return;
   }
 
-  // =====================================================
-  // ABRIR A ABA DO WHATSAPP JÁ AQUI (AINDA NO CLIQUE)
-  // =====================================================
-  // Isso precisa acontecer de forma síncrona, direto no
-  // clique do cliente, para o navegador não bloquear o
-  // popup. Mais abaixo, quando a mensagem estiver pronta,
-  // só trocamos o endereço desta aba para o link do
-  // WhatsApp — assim ele abre sozinho, sem o cliente
-  // precisar clicar em nada de novo.
-  const whatsappWindow =
-    window.open(
-      "",
-      "_blank"
-    );
+  if (!supabaseClient) {
+    showToast("Sem conexão com o sistema de pedidos. Tente novamente.", "error");
+    return;
+  }
 
-  const button =
-    document.getElementById(
-      "sendOrder"
-    );
+  // Abre a aba do WhatsApp já no clique (síncrono) para o navegador
+  // não bloquear o popup. Depois só trocamos o endereço da aba.
+  const whatsappWindow = window.open("", "_blank");
 
-  const originalText =
-    button
-      ? button.innerHTML
-      : "";
+  const button = document.getElementById("sendOrder");
+  const originalText = button ? button.innerHTML : "";
 
   if (button) {
-
-    button.disabled =
-      true;
-
-    button.innerHTML =
-      "⏳ Registrando pedido...";
+    button.disabled = true;
+    button.textContent = "Registrando pedido...";
   }
 
   try {
+    const nameInput = document.getElementById("customerName");
+    const phoneInput = document.getElementById("customerPhone");
+    const emailInput = document.getElementById("customerEmail");
+    const paymentInput = document.getElementById("paymentMethod");
+    const noteInput = document.getElementById("customerNote");
 
-    const nameInput =
-      document.getElementById(
-        "customerName"
-      );
+    const name = nameInput.value.trim();
+    const phone = phoneInput.value.trim();
+    const email = emailInput ? emailInput.value.trim() : "";
+    const payment = paymentInput.value;
+    const note = noteInput ? noteInput.value.trim() : "";
 
-    const phoneInput =
-      document.getElementById(
-        "customerPhone"
-      );
+    const orderType = getOrderType();
+    const combinar = isDeliveryToCombine();
 
-    const paymentInput =
-      document.getElementById(
-        "paymentMethod"
-      );
+    const subtotal = getSubtotal();
+    const total = getTotal(); // para Santa Cruz = só os geladinhos
+    const itensPedido = buildOrderItems();
 
-    const noteInput =
-      document.getElementById(
-        "customerNote"
-      );
+    const baseAddress = getAddress();
 
-    const name =
-      nameInput
-        ? nameInput.value.trim()
-        : "";
+    // Endereço salvo no banco (o painel do vendedor lê este campo)
+    let address = baseAddress;
 
-    const phone =
-      phoneInput
-        ? phoneInput.value.trim()
-        : "";
-
-    const payment =
-      paymentInput
-        ? paymentInput.value
-        : "";
-
-    const note =
-      noteInput
-        ? noteInput.value.trim()
-        : "";
-
-    const orderType =
-      getOrderType();
-
-    let address =
-      getAddress();
-
-    const itensPedido =
-      buildOrderItems();
-
-    const total =
-      getTotal();
-
-    // =====================================================
-    // OBSERVAÇÃO
-    // =====================================================
-
-    if (note) {
-
-      address +=
-        " | Observação: " +
-        note;
+    if (combinar) {
+      address += " | " + NOTE_SCP;
     }
 
-    console.log(
-      "📦 Enviando pedido..."
-    );
+    if (note) {
+      address += " | Observação: " + note;
+    }
 
-    // =====================================================
-    // CRIAR PEDIDO NO SUPABASE
-    // =====================================================
-
-    const result =
-      await supabaseClient.rpc(
-        "criar_pedido",
-        {
-
-          p_cliente_nome:
-            name,
-
-          p_cliente_telefone:
-            phone,
-
-          p_cliente_endereco:
-            address,
-
-          p_itens:
-            itensPedido,
-
-          p_total:
-            total,
-
-          p_forma_pagamento:
-            payment,
-
-          p_tipo_entrega:
-            orderType
-
-        }
-      );
-
-    // =====================================================
-    // VERIFICAR ERRO
-    // =====================================================
+    const result = await supabaseClient.rpc("criar_pedido", {
+      p_cliente_nome: name,
+      p_cliente_telefone: phone,
+      p_cliente_endereco: address,
+      p_itens: itensPedido,
+      p_total: total,
+      p_forma_pagamento: payment,
+      p_tipo_entrega: orderType
+    });
 
     if (result.error) {
-
-      console.error(
-        "❌ Erro ao criar pedido:",
-        result.error
-      );
-
+      console.error("❌ Erro ao criar pedido:", result.error);
       throw result.error;
     }
 
-    // =====================================================
-    // PEGAR DADOS RETORNADOS PELO RPC
-    // =====================================================
+    let dadosPedido = result.data;
 
-    console.log(
-      "📦 Resposta completa do criar_pedido:",
-      result.data
-    );
-
-    let dadosPedido =
-      result.data;
-
-    // Caso o Supabase retorne array
-    if (
-      Array.isArray(dadosPedido)
-    ) {
-
-      dadosPedido =
-        dadosPedido[0];
+    if (Array.isArray(dadosPedido)) {
+      dadosPedido = dadosPedido[0];
     }
 
-    let pedidoId =
-      null;
+    let pedidoId = null;
+    let token = null;
 
-    let token =
-      null;
-
-    if (
-      dadosPedido &&
-      typeof dadosPedido === "object"
-    ) {
-
+    if (dadosPedido && typeof dadosPedido === "object") {
       pedidoId =
-        dadosPedido.id ||
-        dadosPedido.pedido_id ||
-        dadosPedido.id_pedido ||
-        null;
+        dadosPedido.id || dadosPedido.pedido_id || dadosPedido.id_pedido || null;
 
-      token =
-        dadosPedido.token ||
-        dadosPedido.pedido_token ||
-        null;
-
+      token = dadosPedido.token || dadosPedido.pedido_token || null;
     } else {
-
-      pedidoId =
-        dadosPedido;
+      pedidoId = dadosPedido;
     }
-
-    console.log(
-      "🆔 ID do pedido:",
-      pedidoId
-    );
-
-    console.log(
-      "🔑 Token do pedido:",
-      token
-    );
-
-    // =====================================================
-    // GARANTIR ID
-    // =====================================================
 
     if (!pedidoId) {
+      console.error("❌ O Supabase não retornou o ID do pedido.");
 
-      console.error(
-        "❌ O Supabase não retornou o ID do pedido."
-      );
-
-      if (
-        whatsappWindow &&
-        !whatsappWindow.closed
-      ) {
-
+      if (whatsappWindow && !whatsappWindow.closed) {
         whatsappWindow.close();
       }
 
-      alert(
-        "O pedido foi criado, mas não foi possível obter o número do pedido."
+      showToast(
+        "O pedido foi criado, mas não foi possível obter o número dele.",
+        "error"
       );
 
       return;
     }
 
-    // =====================================================
-    // SALVAR PEDIDO LOCALMENTE
-    // =====================================================
-
+    // Guarda o pedido neste aparelho para o botão "Acompanhar pedido"
     const pedidoSalvo = {
-
-      pedidoId:
-        pedidoId,
-
-      telefone:
-        phone,
-
-      token:
-        token,
-
-      status:
-        "pendente",
-
-      salvoEm:
-        Date.now()
-
+      pedidoId: pedidoId,
+      telefone: phone,
+      token: token,
+      status: "pendente",
+      salvoEm: Date.now()
     };
 
-    localStorage.setItem(
-      "gelaGourmetPedido",
-      JSON.stringify(pedidoSalvo)
-    );
+    localStorage.setItem("gelaGourmetPedido", JSON.stringify(pedidoSalvo));
 
-    pedidoAcompanhado =
-      pedidoSalvo;
+    pedidoAcompanhado = pedidoSalvo;
+    statusAnteriorPedido = "pendente";
 
-    statusAnteriorPedido =
-      "pendente";
-
-    // =====================================================
-    // WHATSAPP
-    // =====================================================
-
-    let message =
-      "🍓 *GELA GOURMET* 🍓\n\n";
-
-    message +=
-      "📦 *Pedido nº " +
-      pedidoId +
-      "*\n\n";
-
-    message +=
-      "👤 *Cliente:* " +
-      name +
-      "\n";
-
-    message +=
-      "📞 *Telefone:* " +
-      phone +
-      "\n\n";
-
-    message +=
-      "🍦 *Pedido:*\n";
-
-    itensPedido.forEach(
-      function(item) {
-
-        message +=
-          "• " +
-          item.quantidade +
-          "x " +
-          item.nome +
-          " — " +
-          money(item.subtotal) +
-          "\n";
-
-      }
-    );
-
-    message +=
-      "\n";
-
-    message +=
-      "🛍️ *Subtotal:* " +
-      money(getSubtotal()) +
-      "\n";
-
-    if (
-      orderType === "delivery"
-    ) {
-
-      message +=
-        "🚚 *Entrega:* " +
-        money(DELIVERY_FEE) +
-        "\n";
-
-    } else {
-
-      message +=
-        "🏪 *Retirada:* R$ 0,00\n";
-    }
-
-    message +=
-      "💰 *Total:* " +
-      money(total) +
-      "\n\n";
-
-    message +=
-      "💳 *Pagamento:* " +
-      paymentLabel(payment) +
-      "\n";
-
-    message +=
-      "📦 *Tipo:* " +
-      (
-        orderType === "delivery"
-          ? "Entrega"
-          : "Retirada"
-      ) +
-      "\n";
-
-    // =====================================================
-    // ENDEREÇO
-    // =====================================================
-
-    if (
-      orderType === "delivery"
-    ) {
-
-      message +=
-        "📍 *Endereço:* " +
-        getAddress() +
-        "\n";
-    }
-
-    // =====================================================
-    // OBSERVAÇÃO
-    // =====================================================
-
-    if (note) {
-
-      message +=
-        "\n📝 *Observação:* " +
-        note +
-        "\n";
-    }
-
-    message +=
-      "\n💗 Obrigado por pedir na Gela Gourmet!";
+    // WhatsApp
+    const message = buildWhatsappMessage({
+      pedidoId: pedidoId,
+      name: name,
+      phone: phone,
+      email: email,
+      itens: itensPedido,
+      subtotal: subtotal,
+      total: total,
+      payment: payment,
+      orderType: orderType,
+      combinar: combinar,
+      address: baseAddress,
+      note: note
+    });
 
     const whatsappUrl =
-      "https://wa.me/" +
-      WHATSAPP +
-      "?text=" +
-      encodeURIComponent(message);
+      "https://wa.me/" + WHATSAPP + "?text=" + encodeURIComponent(message);
 
-    // =====================================================
-    // ENVIAR AUTOMATICAMENTE PARA O WHATSAPP
-    // =====================================================
-    // Assim que o pedido é registrado, a mensagem já cai
-    // pronta no WhatsApp — o cliente não precisa clicar em
-    // nenhum botão extra para enviar.
-
-    if (
-      whatsappWindow &&
-      !whatsappWindow.closed
-    ) {
-
-      whatsappWindow.location.href =
-        whatsappUrl;
-
+    if (whatsappWindow && !whatsappWindow.closed) {
+      whatsappWindow.location.href = whatsappUrl;
     } else {
-
-      // Se o navegador bloqueou a abertura automática
-      // (ex.: Safari/iOS em alguns casos), tenta abrir
-      // de novo como reserva.
-      window.open(
-        whatsappUrl,
-        "_blank"
-      );
+      window.open(whatsappUrl, "_blank");
     }
 
-    // =====================================================
-    // LIMPAR CARRINHO
-    // =====================================================
+    const entrega = {
+      combinar: combinar,
+      texto: getDeliveryLabel()
+    };
 
-    cart =
-      Array(products.length).fill(0);
+    // Limpa carrinho e campos
+    cart = Array(products.length).fill(0);
 
     renderProducts();
-
     renderCart();
-
     updateTotal();
 
-    // =====================================================
-    // LIMPAR CAMPOS
-    // =====================================================
+    nameInput.value = "";
+    phoneInput.value = "";
 
-    if (nameInput) {
-      nameInput.value = "";
+    if (emailInput) {
+      emailInput.value = "";
     }
 
-    if (phoneInput) {
-      phoneInput.value = "";
-    }
-
-    if (paymentInput) {
-      paymentInput.value = "";
-    }
+    paymentInput.value = "";
 
     if (noteInput) {
       noteInput.value = "";
     }
-
-    // =====================================================
-    // MOSTRAR SUCESSO
-    // =====================================================
 
     mostrarPedidoSucesso(
       pedidoId,
       token,
       itensPedido,
       total,
-      whatsappUrl
+      whatsappUrl,
+      entrega
     );
-
   } catch (error) {
+    console.error("❌ ERRO COMPLETO:", error);
 
-    console.error(
-      "❌ ERRO COMPLETO:",
-      error
-    );
-
-    if (
-      typeof whatsappWindow !== "undefined" &&
-      whatsappWindow &&
-      !whatsappWindow.closed
-    ) {
-
+    if (whatsappWindow && !whatsappWindow.closed) {
       whatsappWindow.close();
     }
 
-    alert(
-      "Não foi possível registrar o pedido.\n\n" +
-      "Verifique o console do navegador."
+    showToast(
+      "Não foi possível registrar o pedido. Tente novamente em instantes.",
+      "error"
     );
-
   } finally {
-
     if (button) {
-
-      button.disabled =
-        false;
-
-      button.innerHTML =
-        originalText ||
-        "📱 Finalizar pedido pelo WhatsApp";
+      button.disabled = false;
+      button.innerHTML = originalText || "Finalizar pelo WhatsApp";
     }
   }
 }
 
 // =========================================================
-// BOTÃO DO PEDIDO
+// CONFIGURAÇÃO DOS CAMPOS
 // =========================================================
 
 function setupOrderButton() {
-
-  const button =
-    document.getElementById(
-      "sendOrder"
-    );
+  const button = document.getElementById("sendOrder");
 
   if (!button) {
-
-    console.error(
-      "ERRO: botão #sendOrder não encontrado."
-    );
-
+    console.error("ERRO: botão #sendOrder não encontrado.");
     return;
   }
 
-  button.addEventListener(
-    "click",
-    createOrder
-  );
+  button.addEventListener("click", createOrder);
 }
 
-// =========================================================
-// ENTREGA / RETIRADA
-// =========================================================
-
 function setupOrderType() {
-
-  const radios =
-    document.querySelectorAll(
-      'input[name="orderType"]'
-    );
-
-  radios.forEach(
-    function(radio) {
-
-      radio.addEventListener(
-        "change",
-        updateOrderType
-      );
-
-    }
-  );
+  document
+    .querySelectorAll('input[name="orderType"]')
+    .forEach(function (radio) {
+      radio.addEventListener("change", updateOrderType);
+    });
 
   updateOrderType();
 }
 
-// =========================================================
-// TELEFONE
-// =========================================================
-
 function setupPhoneMask() {
-
-  const input =
-    document.getElementById(
-      "customerPhone"
-    );
+  const input = document.getElementById("customerPhone");
 
   if (!input) {
     return;
   }
 
-  input.addEventListener(
-    "input",
-    function() {
+  input.addEventListener("input", function () {
+    let value = input.value.replace(/\D/g, "").substring(0, 11);
 
-      let value =
-        input.value.replace(
-          /\D/g,
-          ""
-        );
-
-      if (value.length > 11) {
-
-        value =
-          value.substring(
-            0,
-            11
-          );
-      }
-
-      if (value.length <= 10) {
-
-        value =
-          value.replace(
-            /^(\d{2})(\d{4})(\d{0,4})$/,
-            "($1) $2-$3"
-          );
-
-      } else {
-
-        value =
-          value.replace(
-            /^(\d{2})(\d{5})(\d{0,4})$/,
-            "($1) $2-$3"
-          );
-      }
-
-      input.value =
-        value;
+    if (value.length <= 10) {
+      value = value.replace(/^(\d{2})(\d{4})(\d{0,4})$/, "($1) $2-$3");
+    } else {
+      value = value.replace(/^(\d{2})(\d{5})(\d{0,4})$/, "($1) $2-$3");
     }
-  );
+
+    input.value = value;
+  });
 }
 
-// =========================================================
-// CIDADE
-// =========================================================
-
 function setupCity() {
-
-  const city =
-    document.getElementById(
-      "city"
-    );
-
-  const street =
-    document.getElementById(
-      "street"
-    );
-
-  const neighborhood =
-    document.getElementById(
-      "neighborhood"
-    );
+  const city = document.getElementById("city");
+  const street = document.getElementById("street");
+  const neighborhood = document.getElementById("neighborhood");
 
   if (!city) {
     return;
   }
 
-  city.addEventListener(
-    "change",
-    function() {
+  city.addEventListener("change", function () {
+    const hasCity = city.value !== "";
 
-      if (
-        getOrderType() === "pickup"
-      ) {
-        return;
-      }
-
-      const hasCity =
-        city.value !== "";
-
+    if (getOrderType() !== "pickup") {
       if (street) {
-
-        street.disabled =
-          !hasCity;
-
-        if (hasCity) {
-
-          street.placeholder =
-            "Digite sua rua...";
-
-        } else {
-
-          street.placeholder =
-            "Escolha a cidade primeiro...";
-        }
+        street.disabled = !hasCity;
+        street.placeholder = hasCity
+          ? "Digite sua rua..."
+          : "Escolha a cidade primeiro...";
       }
 
       if (neighborhood) {
-
-        neighborhood.disabled =
-          !hasCity;
-
-        if (hasCity) {
-
-          neighborhood.placeholder =
-            "Digite seu bairro...";
-
-        } else {
-
-          neighborhood.placeholder =
-            "Escolha a cidade primeiro...";
-        }
+        neighborhood.disabled = !hasCity;
+        neighborhood.placeholder = hasCity
+          ? "Digite seu bairro..."
+          : "Escolha a cidade primeiro...";
       }
-
     }
-  );
+
+    // Recalcula entrega, total e aviso conforme a cidade escolhida
+    updateTotal();
+  });
+}
+
+// Botões "Acompanhar pedido" (cabeçalho e rodapé)
+function setupTrackButtons() {
+  document
+    .querySelectorAll("#btnAcompanharPedido, [data-acompanhar]")
+    .forEach(function (btn) {
+      btn.addEventListener("click", function (event) {
+        event.preventDefault();
+
+        const pedidoSalvo = localStorage.getItem("gelaGourmetPedido");
+
+        if (pedidoSalvo) {
+          try {
+            const pedido = JSON.parse(pedidoSalvo);
+
+            if (pedido.token) {
+              window.location.href =
+                "acompanhar-pedido.html?token=" +
+                encodeURIComponent(pedido.token);
+
+              return;
+            }
+          } catch (erro) {
+            console.error("Erro ao recuperar pedido:", erro);
+          }
+        }
+
+        showToast("Nenhum pedido recente foi encontrado neste aparelho.", "error");
+      });
+    });
 }
 
 // =========================================================
 // INICIALIZAÇÃO
 // =========================================================
 
-document.addEventListener(
-  "DOMContentLoaded",
-  function() {
-
-    console.log(
-      "🍓 Gela Gourmet iniciado!"
-    );
-
-    console.log(
-      "🔌 Conectando ao Supabase..."
-    );
-
-    loadProducts();
-
-    setupOrderButton();
-
-    setupOrderType();
-
-    setupPhoneMask();
-
-    setupCity();
-
-  }
-
-  
-);
-
-// =========================================================
-// ACOMPANHAR PEDIDO PELO INDEX
-// =========================================================
-
 document.addEventListener("DOMContentLoaded", function () {
+  loadProducts();
 
-    const btnAcompanharPedido =
-        document.getElementById("btnAcompanharPedido");
-
-    if (!btnAcompanharPedido) {
-        return;
-    }
-
-    btnAcompanharPedido.addEventListener("click", function (event) {
-
-        event.preventDefault();
-
-        const pedidoSalvo =
-            localStorage.getItem("gelaGourmetPedido");
-
-        // Se já existe um pedido salvo
-        if (pedidoSalvo) {
-
-            try {
-
-                const pedido = JSON.parse(pedidoSalvo);
-
-                if (pedido.token) {
-
-                    window.location.href =
-                        "acompanhar-pedido.html?token=" +
-                        encodeURIComponent(pedido.token);
-
-                    return;
-                }
-
-            } catch (erro) {
-
-                console.error(
-                    "Erro ao recuperar pedido:",
-                    erro
-                );
-
-            }
-        }
-
-        // Caso não tenha pedido salvo
-        alert(
-            "Nenhum pedido recente foi encontrado neste dispositivo."
-        );
-    });
-
+  setupOrderButton();
+  setupOrderType();
+  setupPhoneMask();
+  setupCity();
+  setupCartBar();
+  setupTrackButtons();
 });
-
-// teste

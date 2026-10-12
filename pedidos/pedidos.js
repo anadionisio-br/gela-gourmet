@@ -548,6 +548,12 @@ function renderizarPedidos(
                             )}
                         </strong>
 
+                        ${
+                            entregaACombinar(pedido)
+                                ? '<small class="entrega-combinar">+ entrega a combinar</small>'
+                                : ""
+                        }
+
                     </div>
 
 
@@ -570,6 +576,48 @@ function renderizarPedidos(
             );
 
         }
+    );
+
+}
+
+
+// ======================================================
+// ENTREGA A COMBINAR (SANTA CRUZ DAS PALMEIRAS)
+// ======================================================
+
+function entregaACombinar(
+    pedido
+) {
+
+    const tipo =
+        String(
+            pedido.tipo_entrega || ""
+        ).toLowerCase();
+
+
+    if (
+        tipo !== "delivery" &&
+        tipo !== "entrega"
+    ) {
+
+        return false;
+
+    }
+
+
+    const endereco =
+        String(
+            pedido.cliente_endereco || ""
+        );
+
+
+    return (
+        /entrega a combinar/i.test(
+            endereco
+        ) ||
+        /santa cruz das palmeiras/i.test(
+            endereco
+        )
     );
 
 }
@@ -737,6 +785,21 @@ function preencherModal(
         formatarMoeda(
             pedido.total
         );
+
+
+    const avisoEntrega =
+        document.getElementById(
+            "detalheEntregaCombinar"
+        );
+
+    if (avisoEntrega) {
+
+        avisoEntrega.style.display =
+            entregaACombinar(pedido)
+                ? "block"
+                : "none";
+
+    }
 
 
     document.getElementById(

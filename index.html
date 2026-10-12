@@ -1,452 +1,351 @@
+
 <!doctype html>
-
 <html lang="pt-BR">
-
 <head>
-    <meta charset="UTF-8" />
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Gela Gourmet | Geladinhos Gourmet</title>
+  <meta name="description" content="Geladinhos gourmet cremosos e recheados. Escolha seus sabores e faça seu pedido pelo WhatsApp.">
+  <meta name="theme-color" content="#fffaf6">
 
-
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-
-    <title>Gela Gourmet | Geladinhos Gourmet</title>
-
-    <meta name="description"
-        content="Geladinhos Gourmet cremosos, recheados e irresistíveis. Faça seu pedido online!" />
-
-    <link rel="stylesheet" href="style.css" />
-
+  <link rel="icon" href="imagens/logo.jpeg">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;700&family=Great+Vibes&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="style.css">
+  <script>document.documentElement.classList.add("js");</script>
 </head>
 
 <body>
+  <a class="skip" href="#cardapio">Ir para o cardápio</a>
 
-    <!-- CABEÇALHO -->
-    <header class="topo">
-        <div class="nav">
-            <a class="brand" href="#inicio">
-                <img src="imagens/logo.jpeg" alt="Logo Gela Gourmet" />
-            </a>
+  <header class="topo" id="topo">
+    <div class="nav">
+      <a class="brand" href="#inicio" aria-label="Gela Gourmet">
+        <img src="imagens/logo.jpeg" width="44" height="49" alt="Logo Gela Gourmet">
+        <span>Gela Gourmet</span>
+      </a>
 
-            <nav class="links">
-                <a href="#inicio"> Início </a>
+      <nav class="links" aria-label="Navegação principal">
+        <a href="#inicio">Início</a>
+        <a href="#cardapio">Cardápio</a>
+        <a href="#como-pedir">Como pedir</a>
+        <a href="#entregas">Entregas</a>
+        <a href="#duvidas">Dúvidas</a>
+      </nav>
 
-                <a href="#cardapio"> Cardápio </a>
+      <div class="nav-actions">
+        <a href="#" id="btnAcompanharPedido" class="btn-acompanhar-pedido">Acompanhar pedido</a>
+        <a class="btn small" href="#pedido" id="navCart">
+          Meu pedido <span class="cart-badge" id="cartBadge">0</span>
+        </a>
+      </div>
+    </div>
+  </header>
 
-                <a href="#pedido"> Meu pedido </a>
+  <main>
+    <section id="inicio" class="hero">
+      <div class="hero-text">
+        <p class="script">Geladinhos Gourmet</p>
+        <h1>Cremosos, recheados e irresistíveis! ♡</h1>
 
-                <a href="#sobre"> Sobre </a>
+        <ul>
+          <li>🍓 Sabores que dão água na boca</li>
+          <li>📍 Tambaú e Santa Cruz das Palmeiras</li>
+          <li>💬 Faça seu pedido pelo site</li>
+        </ul>
 
-                <a href="#entregas"> Entregas </a>
-            </nav>
-
-            <a class="btn small" href="#cardapio"> 🛒 Fazer pedido </a>
-
-            <a href="#" id="btnAcompanharPedido" class="btn-acompanhar-pedido">
-                Acompanhar pedido
-            </a>
+        <div class="hero-actions">
+          <a class="btn" href="#cardapio">Ver cardápio ↗</a>
+          <a class="btn ghost" href="#pedido">Fazer meu pedido</a>
         </div>
-    </header>
+      </div>
 
-    <main>
-        <!-- =====================================================
-         HERO / INÍCIO
-    ====================================================== -->
+      <div class="hero-logo-wrap hero-photo-stage" id="heroStage">
+        <span class="hero-orbit hero-orbit-one" aria-hidden="true">♡</span>
+        <span class="hero-orbit hero-orbit-two" aria-hidden="true">✦</span>
+        <img class="hero-logo hero-photo"
+             src="imagens/fotoinicial.jpeg"
+             alt="Geladinho gourmet de morango"
+             fetchpriority="high">
+        <span class="hero-photo-tag">Feito para apaixonar</span>
+      </div>
+    </section>
 
-        <section id="inicio" class="hero">
-            <div class="hero-text">
-                <img class="hero-logo" src="imagens/logo.jpeg" alt="Logo Gela Gourmet" />
+    <section class="benefits">
+      <div>❄️ <b>SABORES<br>INCRÍVEIS</b></div>
+      <div>♡ <b>PRODUTOS<br>DE QUALIDADE</b></div>
+      <div>🚚 <b>ENTREGA<br>RÁPIDA</b></div>
+      <div>✓ <b>PEDIDO<br>FÁCIL</b></div>
+    </section>
 
-                <p class="script">Geladinhos Gourmet</p>
+    <section class="photo-story" aria-label="Conheça nossos sabores">
+      <div class="photo-story-copy">
+        <span class="eyebrow">UM MOMENTO GELA GOURMET</span>
+        <h2>Seu sabor favorito<br><em>tem cara de felicidade.</em></h2>
+        <p>Textura cremosa, combinações irresistíveis e carinho em cada detalhe.</p>
+        <a class="btn" href="#cardapio">Encontrar meu sabor ↗</a>
+      </div>
 
-                <h1>Cremosos, recheados e irresistíveis! ♡</h1>
+      <div class="photo-story-gallery">
+        <figure class="story-photo story-photo-main">
+          <img src="imagens/oreo1.jpg" alt="Geladinho gourmet de Oreo" loading="lazy">
+          <figcaption>Chocolate & Oreo</figcaption>
+        </figure>
+        <figure class="story-photo story-photo-small">
+          <img src="imagens/pudim1.jpg" alt="Geladinhos e pudim com calda" loading="lazy">
+          <figcaption>Doces momentos</figcaption>
+        </figure>
+      </div>
+    </section>
 
-                <ul>
-                    <li>🍦 Sabores que dão água na boca</li>
+    <section id="cardapio" class="section">
+      <header class="section-head">
+        <p class="script">Nosso Cardápio</p>
+        <h2>Escolha seus sabores favoritos! ♡</h2>
+      </header>
+      <div id="products" class="cards" aria-live="polite"></div>
+    </section>
 
-                    <li>📍 Tambaú e Santa Cruz das Palmeiras</li>
+    <section id="sobre" class="section why">
+      <blockquote class="quote">
+        <p>“Geladinho maravilhoso! Sempre peço e nunca decepciona. Super recomendo!”</p>
+        <footer>— Cliente</footer>
+      </blockquote>
+    </section>
 
-                    <li>💬 Faça seu pedido pelo site</li>
-                </ul>
+    <section id="como-pedir" class="section how">
+      <header class="section-head">
+        <p class="script">Como pedir</p>
+        <h2>Quatro passos, sem cadastro</h2>
+      </header>
 
-                <a class="btn" href="#cardapio"> 🍦 Ver cardápio → </a>
+      <ol class="steps">
+        <li>
+          <h3>Escolha os sabores</h3>
+          <p>Adicione os geladinhos e ajuste as quantidades.</p>
+        </li>
+        <li>
+          <h3>Entrega ou retirada</h3>
+          <p>Informe como prefere receber seu pedido.</p>
+        </li>
+        <li>
+          <h3>Seus dados e pagamento</h3>
+          <p>Preencha seu nome, telefone e forma de pagamento.</p>
+        </li>
+        <li>
+          <h3>Finalize pelo WhatsApp</h3>
+          <p>Confira seu pedido e envie a mensagem para confirmar.</p>
+        </li>
+      </ol>
+    </section>
+
+    <section id="pedido" class="section order-section">
+      <header class="section-head">
+        <p class="script">Faça já o seu pedido!</p>
+        <h2>Monte do seu jeito ♡</h2>
+      </header>
+
+      <div class="order-layout">
+        <div class="order-main">
+          <div class="panel">
+            <h3>Itens do pedido</h3>
+            <div id="cartItems" class="cart-items">
+              <p class="empty">Seu carrinho está vazio. 💗</p>
+            </div>
+          </div>
+
+          <div class="panel delivery-box">
+            <h3>Como você quer receber?</h3>
+
+            <div class="delivery-options">
+              <label class="option-card">
+                <input type="radio" name="orderType" value="delivery" checked>
+                <span>
+                  <strong>Entrega</strong>
+                  <small>Tambaú ou Santa Cruz das Palmeiras</small>
+                </span>
+              </label>
+
+              <label class="option-card">
+                <input type="radio" name="orderType" value="pickup">
+                <span>
+                  <strong>Retirada</strong>
+                  <small>Sem taxa</small>
+                </span>
+              </label>
             </div>
 
-            <div class="hero-photo">
-                <img src="imagens/fotoinicial.jpeg" alt="Geladinhos Gela Gourmet" />
-            </div>
-        </section>
+            <div id="deliveryFields">
+              <label for="city">Cidade</label>
+              <select id="city">
+                <option value="">Selecione sua cidade</option>
+                <option value="Tambaú - SP">Tambaú</option>
+                <option value="Santa Cruz das Palmeiras - SP">Santa Cruz das Palmeiras</option>
+              </select>
 
-        <!-- =====================================================
-         BENEFÍCIOS
-    ====================================================== -->
+              <p id="deliveryNotice" class="delivery-notice" hidden></p>
 
-        <section class="benefits">
-            <div>
-                ❄️
+              <label for="street">Rua</label>
+              <input id="street" type="text" autocomplete="off"
+                     placeholder="Escolha a cidade primeiro..." disabled list="streetList">
+              <datalist id="streetList"></datalist>
 
-                <b>
-                    SABORES
-                    <br />
-                    INCRÍVEIS
-                </b>
-            </div>
-
-            <div>
-                ♡
-
-                <b>
-                    PRODUTOS
-                    <br />
-                    DE QUALIDADE
-                </b>
-            </div>
-
-            <div>
-                🚚
-
-                <b>
-                    ENTREGA
-                    <br />
-                    RÁPIDA
-                </b>
-            </div>
-
-            <div>
-                ✓
-
-                <b>
-                    PEDIDO
-                    <br />
-                    FÁCIL
-                </b>
-            </div>
-        </section>
-
-        <!-- =====================================================
-         CARDÁPIO
-    ====================================================== -->
-
-        <section id="cardapio" class="section">
-            <div class="title">
-                <span> ♡ </span>
-
+              <div class="address-row">
                 <div>
-                    <p class="script">Nosso Cardápio</p>
-
-                    <h2>Escolha seus sabores favoritos!</h2>
+                  <label for="number">Número</label>
+                  <input id="number" type="text" inputmode="numeric" placeholder="Número">
                 </div>
-
-                <span> ♡ </span>
-            </div>
-
-            <!--
-            OS PRODUTOS DO SUPABASE
-            APARECEM AQUI AUTOMATICAMENTE
-        -->
-
-            <div id="products" class="cards"></div>
-        </section>
-
-        <!-- =====================================================
-         ÁREA DE PEDIDO / CARRINHO
-    ====================================================== -->
-
-        <section id="pedido" class="order-section">
-            <div class="order-card">
-                <!-- INTRODUÇÃO -->
-
-                <div class="order-intro">
-                    <p class="script">Faça já o seu pedido!</p>
-
-                    <h2>Monte do seu jeito ♡</h2>
-
-                    <p>
-                        Escolha os sabores acima, ajuste as quantidades e informe seus
-                        dados para finalizar.
-                    </p>
+                <div>
+                  <label for="neighborhood">Bairro</label>
+                  <input id="neighborhood" type="text" autocomplete="off"
+                         placeholder="Escolha a cidade primeiro..." disabled list="neighborhoodList">
+                  <datalist id="neighborhoodList"></datalist>
                 </div>
-
-                <div class="order-content">
-                    <!-- =================================================
-                     CARRINHO
-                ================================================== -->
-
-                    <div id="cartItems" class="cart-items">
-                        <p class="empty">Seu carrinho está vazio. 💗</p>
-                    </div>
-
-                    <!-- =================================================
-                     ENTREGA
-                ================================================== -->
-
-                    <div class="delivery-box">
-                        <h3>📍 Como você quer receber?</h3>
-
-                        <div class="delivery-options">
-                            <!-- ENTREGA -->
-
-                            <label class="option-card">
-                                <input type="radio" name="orderType" value="delivery" checked />
-
-                                <span>
-                                    🚚
-
-                                    <strong> Entrega </strong>
-
-                                    <small> Taxa de R$ 5,00 </small>
-                                </span>
-                            </label>
-
-                            <!-- RETIRADA -->
-
-                            <label class="option-card">
-                                <input type="radio" name="orderType" value="pickup" />
-
-                                <span>
-                                    🏪
-
-                                    <strong> Retirada </strong>
-
-                                    <small> Sem taxa </small>
-                                </span>
-                            </label>
-                        </div>
-
-                        <!-- =================================================
-                         CAMPOS DE ENTREGA
-                    ================================================== -->
-
-                        <div id="deliveryFields">
-                            <!-- CIDADE -->
-
-                            <label for="city"> Cidade </label>
-
-                            <select id="city">
-                                <option value="">Selecione sua cidade</option>
-
-                                <option value="Tambaú - SP">Tambaú</option>
-
-                                <option value="Santa Cruz das Palmeiras - SP">
-                                    Santa Cruz das Palmeiras
-                                </option>
-                            </select>
-
-                            <!-- RUA -->
-
-                            <label for="street"> Rua </label>
-
-                            <div class="autocomplete">
-                                <input id="street" type="text" autocomplete="off"
-                                    placeholder="Escolha a cidade primeiro..." disabled list="streetList" />
-
-                                <datalist id="streetList"></datalist>
-
-                                <div id="streetSuggestions" class="suggestions"></div>
-                            </div>
-
-                            <!-- NÚMERO + BAIRRO -->
-
-                            <div class="address-row">
-                                <!-- NÚMERO -->
-
-                                <div>
-                                    <label for="number"> Número </label>
-
-                                    <input id="number" type="text" inputmode="numeric" placeholder="Número" />
-                                </div>
-
-                                <!-- BAIRRO -->
-
-                                <div>
-                                    <label for="neighborhood"> Bairro </label>
-
-                                    <div class="autocomplete">
-                                        <input type="text" id="neighborhood" autocomplete="off"
-                                            placeholder="Escolha a cidade primeiro..." disabled
-                                            list="neighborhoodList" />
-
-                                        <datalist id="neighborhoodList"></datalist>
-
-                                        <div id="neighborhoodSuggestions" class="suggestions"></div>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- =================================================
-                     DADOS DO CLIENTE
-                ================================================== -->
-
-                    <div class="customer">
-                        <h3>👤 Seus dados</h3>
-
-                        <!-- NOME -->
-
-                        <label for="customerName"> Seu Nome </label>
-
-                        <input id="customerName" type="text" placeholder="Digite seu nome" autocomplete="name" />
-
-                        <!-- TELEFONE -->
-
-                        <label for="customerPhone"> WhatsApp / Telefone </label>
-
-                        <input id="customerPhone" type="tel" inputmode="tel" placeholder="(19) 99999-9999"
-                            autocomplete="tel" />
-
-                        <label for="customerEmail"> Email</label>
-
-                        <input id="customerEmail" type="email" placeholder="seuemail@gmail.com" autocomplete="email" />
-
-                        <!-- PAGAMENTO -->
-
-                        <label for="paymentMethod"> Forma de pagamento </label>
-
-                        <select id="paymentMethod">
-                            <option value="">Selecione uma forma de pagamento</option>
-
-                            <option value="pix">📱 Pix</option>
-
-                            <option value="dinheiro">💵 Dinheiro</option>
-
-                            <option value="cartao">💳 Cartão</option>
-                        </select>
-
-                        <!-- OBSERVAÇÃO -->
-
-                        <label for="customerNote"> Observações </label>
-
-                        <textarea id="customerNote" placeholder="Observação (opcional)"></textarea>
-                    </div>
-
-                    <!-- =================================================
-                     TOTAL
-                ================================================== -->
-
-                    <div class="total-details">
-                        <!-- SUBTOTAL -->
-
-                        <div class="subtotal-row">
-                            <span> Geladinhos </span>
-
-                            <strong id="subtotal"> R$ 0,00 </strong>
-                        </div>
-
-                        <!-- ENTREGA -->
-
-                        <div class="delivery-row">
-                            <span> Taxa de entrega </span>
-
-                            <strong id="deliveryFee"> R$ 5,00 </strong>
-                        </div>
-
-                        <!-- TOTAL -->
-
-                        <div class="total-row">
-                            <span> Total </span>
-
-                            <strong id="total"> R$ 0,00 </strong>
-                        </div>
-                    </div>
-
-                    <!-- =================================================
-                     FINALIZAR PEDIDO
-                ================================================== -->
-
-                    <button id="sendOrder" class="btn full" type="button">
-                        Finalizar pedido
-                    </button>
-
-                    <small class="disclaimer">
-                        Seu pedido será registrado no sistema e depois aberto no WhatsApp
-                        para você confirmar o envio.
-                    </small>
-                </div>
+              </div>
             </div>
-        </section>
+          </div>
 
-        <!-- =====================================================
-         INFORMAÇÕES ADICIONAIS
-    ====================================================== -->
+          <div class="panel customer">
+            <h3>Seus dados</h3>
 
-        <section id="sobre" class="info">
-            <!-- ENTREGAS -->
+            <label for="customerName">Seu nome</label>
+            <input id="customerName" type="text" placeholder="Digite seu nome" autocomplete="name">
 
-            <div>
-                <span> 🚚 </span>
+            <label for="customerPhone">WhatsApp / telefone</label>
+            <input id="customerPhone" type="tel" inputmode="tel"
+                   placeholder="(19) 99999-9999" autocomplete="tel">
 
-                <h3>Entregas</h3>
+            <label for="customerEmail">E-mail (opcional)</label>
+            <input id="customerEmail" type="email" placeholder="seuemail@gmail.com" autocomplete="email">
 
-                <p>
-                    Tambaú e
-                    <br />
-                    Santa Cruz das Palmeiras
-                </p>
+            <label for="paymentMethod">Forma de pagamento</label>
+            <select id="paymentMethod">
+              <option value="">Selecione uma forma de pagamento</option>
+              <option value="pix">Pix</option>
+              <option value="dinheiro">Dinheiro</option>
+              <option value="cartao">Cartão</option>
+            </select>
 
-                <small> Taxa de entrega: R$ 5,00 </small>
+            <label for="customerNote">Observações (opcional)</label>
+            <textarea id="customerNote" placeholder="Alguma observação sobre o pedido?"></textarea>
+          </div>
+        </div>
+
+        <aside class="summary" aria-label="Resumo do pedido">
+          <h3>Resumo</h3>
+
+          <div class="total-details">
+            <div class="subtotal-row">
+              <span>Geladinhos</span>
+              <strong id="subtotal">R$ 0,00</strong>
             </div>
-
-            <!-- HORÁRIO -->
-
-            <div id="entregas">
-                <span> 🕒 </span>
-
-                <h3>Horário de atendimento</h3>
-
-                <p>
-                    Todos os dias
-                    <br />
-                    Das 13h às 22h
-                </p>
+            <div class="delivery-row">
+              <span>Entrega</span>
+              <strong id="deliveryFee">R$ 5,00</strong>
             </div>
-
-            <!-- DEPOIMENTOS -->
-
-            <div>
-                <span> ⭐ </span>
-
-                <h3>Depoimentos</h3>
-
-                <blockquote>
-                    “Geladinho maravilhoso!
-                    <br />
-                    Sempre peço e nunca decepciona.
-                    <br />
-                    Super recomendo!”
-
-                    <br />
-
-                    <small> — Cliente </small>
-                </blockquote>
+            <div class="total-row">
+              <span id="totalLabel">Total</span>
+              <strong id="total">R$ 0,00</strong>
             </div>
-        </section>
-    </main>
+            <p id="totalNote" class="total-note" hidden></p>
+          </div>
 
-    <!-- =====================================================
-     RODAPÉ
-====================================================== -->
+          <button id="sendOrder" class="btn full" type="button">
+            Finalizar pelo WhatsApp
+          </button>
 
-    <footer>
-        <img src="imagens/logo.jpeg" alt="Logo Gela Gourmet" />
+          <small class="disclaimer">
+            Confira os dados e envie seu pedido pelo WhatsApp.
+          </small>
+        </aside>
+      </div>
+    </section>
 
-        <span>
-            Gela Gourmet ♡ &nbsp; Mais que geladinhos, é felicidade em forma de
-            sabor!
-        </span>
-    </footer>
+    <section id="entregas" class="section delivery-info">
+      <header class="section-head">
+        <p class="script">Entregas</p>
+        <h2>Entrega e retirada</h2>
+        <p>Atendemos todos os dias, das 13h às 22h.</p>
+      </header>
 
-    <!-- =====================================================
-     SUPABASE
-     
-     IMPORTANTE:
-     O Supabase precisa ser carregado ANTES do script.js.
-====================================================== -->
+      <div class="delivery-grid">
+        <article>
+          <h3>Tambaú</h3>
+          <p>Entrega com taxa de R$ 5,00.</p>
+        </article>
+        <article>
+          <h3>Santa Cruz das Palmeiras</h3>
+          <p>Valor da entrega a combinar.</p>
+        </article>
+        <article>
+          <h3>Retirada</h3>
+          <p>Sem taxa. Escolha “Retirada” ao montar o pedido.</p>
+        </article>
+      </div>
+    </section>
 
-    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <section id="duvidas" class="section faq">
+      <header class="section-head">
+        <p class="script">Dúvidas</p>
+        <h2>Perguntas frequentes</h2>
+      </header>
 
-    <!-- SCRIPT PRINCIPAL -->
+      <div class="faq-list">
+        <details>
+          <summary>Como faço meu pedido?</summary>
+          <p>Escolha os sabores, informe entrega ou retirada, preencha seus dados e finalize pelo WhatsApp.</p>
+        </details>
+        <details>
+          <summary>Quais formas de pagamento vocês aceitam?</summary>
+          <p>Pix, dinheiro e cartão.</p>
+        </details>
+        <details>
+          <summary>Quanto custa a entrega?</summary>
+          <p>Em Tambaú a taxa é de R$ 5,00. Em Santa Cruz das Palmeiras, o valor é combinado pelo WhatsApp. Na retirada não há taxa.</p>
+        </details>
+        <details>
+          <summary>Qual o horário de atendimento?</summary>
+          <p>Todos os dias, das 13h às 22h.</p>
+        </details>
+        <details>
+          <summary>Um sabor aparece como esgotado. E agora?</summary>
+          <p>Esse sabor está indisponível no momento. Os demais sabores continuam disponíveis.</p>
+        </details>
+        <details>
+          <summary>Como acompanho meu pedido?</summary>
+          <p>Use o botão “Acompanhar pedido” no mesmo aparelho em que fez a compra.</p>
+        </details>
+      </div>
+    </section>
+  </main>
 
-    <script src="script.js"></script>
-    ```
+  <a class="cart-bar" id="cartBar" href="#pedido">
+    <span id="cartBarCount">0 itens</span>
+    <strong id="cartBarTotal">R$ 0,00</strong>
+    <span class="cart-bar-go">Ver pedido</span>
+  </a>
+
+  <div id="toast" class="toast" role="status" aria-live="polite"></div>
+
+  <footer>
+    <div class="footer-inner">
+      <img src="imagens/logo.jpeg" width="72" height="81" alt="Logo Gela Gourmet">
+      <div>
+        <strong>Gela Gourmet</strong>
+        <p>Mais que geladinhos, é felicidade em forma de sabor.</p>
+      </div>
+      <div>
+        <p>Tambaú e Santa Cruz das Palmeiras</p>
+        <p>Todos os dias, das 13h às 22h</p>
+        <p><a href="https://wa.me/5519993149687" target="_blank" rel="noopener">WhatsApp (19) 99314-9687</a></p>
+        <p class="footer-track"><a href="#" data-acompanhar>Acompanhar pedido</a></p>
+      </div>
+    </div>
+  </footer>
+
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="efeitos.js"></script>
+  <script src="script.js"></script>
 </body>
-
 </html>
