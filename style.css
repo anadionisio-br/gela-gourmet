@@ -1839,3 +1839,52 @@ button, .btn, .add-btn { touch-action:manipulation; }
   .hero-photo,.hero-orbit-one,.hero-orbit-two,.hero-photo-stage::after { animation:none !important; }
   .hero-logo-wrap.hero-photo-stage { transform:none !important; }
 }
+
+
+/* FIX DEFINITIVO — BOTÃO ACOMPANHAR PEDIDO NO CELULAR */
+@media (max-width: 720px) {
+  .topo .nav .nav-actions {
+    display: flex !important;
+    visibility: visible !important;
+    opacity: 1 !important;
+    position: relative !important;
+    width: 100% !important;
+    flex-direction: row !important;
+    align-items: stretch !important;
+    gap: 10px !important;
+    overflow: visible !important;
+  }
+
+  .topo .nav .nav-actions #btnAcompanharPedido {
+    display: flex !important;
+    visibility: visible !important;
+    opacity: 1 !important;
+    position: static !important;
+    flex: 1 1 50% !important;
+    align-items: center !important;
+    justify-content: center !important;
+    min-width: 0 !important;
+    min-height: 44px !important;
+    padding: 8px !important;
+    margin: 0 !important;
+    color: #963b53 !important;
+    background: #fffaf6 !important;
+    border: 1px solid #b84f68 !important;
+    border-radius: 12px !important;
+    font-size: 12px !important;
+    line-height: 1.3 !important;
+    text-align: center !important;
+    white-space: normal !important;
+    transform: none !important;
+  }
+
+  .topo .nav .nav-actions #navCart {
+    display: flex !important;
+    flex: 1 1 50% !important;
+    align-items: center !important;
+    justify-content: center !important;
+    min-width: 0 !important;
+    margin: 0 !important;
+  }
+}
+
