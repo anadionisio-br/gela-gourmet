@@ -577,3 +577,12 @@ nav {
     .products-header-actions { flex-direction: column; width: 100%; }
     .products-header-actions button { width: 100%; }
 }
+
+/* Área de adicionais */
+.extras-admin-section { margin-top: 28px; }
+.extras-admin-section .product-card { min-height: 150px; }
+.extras-admin-section .product-info { padding: 22px; }
+.extras-admin-section .product-actions { flex-wrap: wrap; }
+@media (max-width: 900px) {
+  .extras-admin-section .products-header { align-items: flex-start; flex-direction: column; }
+}

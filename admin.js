@@ -662,6 +662,103 @@ document
         `;
   });
 
+
+// =========================
+// GERENCIAR ADICIONAIS
+// =========================
+let listaAdicionais = [];
+
+async function carregarAdicionais() {
+  const grid = document.getElementById("adicionaisGrid");
+  if (!grid) return;
+  grid.innerHTML = '<div class="loading">Carregando adicionais...</div>';
+
+  try {
+    const { data, error } = await supabaseClient
+      .from("adicionais")
+      .select("id, nome, preco, disponivel")
+      .order("id", { ascending: true });
+
+    if (error) throw error;
+    listaAdicionais = data || [];
+
+    if (!listaAdicionais.length) {
+      grid.innerHTML = '<div class="loading">Nenhum adicional cadastrado. Clique em “Novo adicional” para cadastrar.</div>';
+      return;
+    }
+
+    grid.innerHTML = listaAdicionais.map((item) => {
+      const ativo = item.disponivel !== false;
+      const preco = Number(item.preco || 0).toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
+      const nomeSeguro = String(item.nome || "").replace(/[&<>"']/g, (c) => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+      return `<article class="product-card">
+        <div class="product-info">
+          <h3 class="product-name">${nomeSeguro}</h3>
+          <div class="product-price">${preco}</div>
+          <div class="product-status ${ativo ? "available" : "unavailable"}">${ativo ? "● Ativo" : "● Desativado"}</div>
+          <div class="product-actions">
+            <button class="edit-button" onclick="editarAdicional(${Number(item.id)})">✏️ Editar</button>
+            <button class="toggle-button ${ativo ? "available" : "unavailable"}" onclick="alternarAdicional(${Number(item.id)})">${ativo ? "🔴 Desativar" : "🟢 Ativar"}</button>
+            <button class="delete-button" onclick="excluirAdicional(${Number(item.id)})">🗑️ Excluir</button>
+          </div>
+        </div>
+      </article>`;
+    }).join("");
+  } catch (error) {
+    console.error("Erro ao carregar adicionais:", error);
+    grid.innerHTML = `<div class="loading">Não foi possível carregar os adicionais. ${String(error.message || "Verifique se executou o arquivo setup-adicionais.sql no SQL Editor do Supabase.").replace(/[<>]/g, "")}</div>`;
+  }
+}
+
+async function criarAdicional() {
+  const nome = prompt("Nome do adicional:");
+  if (nome === null) return;
+  const nomeLimpo = nome.trim();
+  if (!nomeLimpo) return alert("Informe o nome do adicional.");
+  const valorTexto = prompt("Preço do adicional (ex.: 5,00):", "5,00");
+  if (valorTexto === null) return;
+  const preco = Number(valorTexto.trim().replace(/\./g, "").replace(",", "."));
+  if (!Number.isFinite(preco) || preco < 0) return alert("Informe um preço válido.");
+
+  const { error } = await supabaseClient.from("adicionais").insert({ nome: nomeLimpo, preco, disponivel: true });
+  if (error) return alert("Não foi possível cadastrar: " + error.message);
+  await carregarAdicionais();
+}
+
+async function editarAdicional(id) {
+  const item = listaAdicionais.find((a) => Number(a.id) === Number(id));
+  if (!item) return;
+  const nome = prompt("Nome do adicional:", item.nome);
+  if (nome === null) return;
+  const nomeLimpo = nome.trim();
+  if (!nomeLimpo) return alert("Informe o nome do adicional.");
+  const valorTexto = prompt("Preço do adicional (ex.: 5,00):", Number(item.preco).toFixed(2).replace(".", ","));
+  if (valorTexto === null) return;
+  const preco = Number(valorTexto.trim().replace(/\./g, "").replace(",", "."));
+  if (!Number.isFinite(preco) || preco < 0) return alert("Informe um preço válido.");
+
+  const { error } = await supabaseClient.from("adicionais").update({ nome: nomeLimpo, preco }).eq("id", id);
+  if (error) return alert("Não foi possível editar: " + error.message);
+  await carregarAdicionais();
+}
+
+async function alternarAdicional(id) {
+  const item = listaAdicionais.find((a) => Number(a.id) === Number(id));
+  if (!item) return;
+  const { error } = await supabaseClient.from("adicionais").update({ disponivel: item.disponivel === false }).eq("id", id);
+  if (error) return alert("Não foi possível alterar a disponibilidade: " + error.message);
+  await carregarAdicionais();
+}
+
+async function excluirAdicional(id) {
+  const item = listaAdicionais.find((a) => Number(a.id) === Number(id));
+  if (!item || !confirm(`Deseja excluir o adicional “${item.nome}”?`)) return;
+  const { error } = await supabaseClient.from("adicionais").delete().eq("id", id);
+  if (error) return alert("Não foi possível excluir: " + error.message);
+  await carregarAdicionais();
+}
+
+
 // =========================
 // INICIAR PAINEL
 // =========================
@@ -669,5 +766,6 @@ document
 verificarLogin().then((logado) => {
   if (logado) {
     carregarProdutos();
+    carregarAdicionais();
   }
 });

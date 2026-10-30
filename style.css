@@ -1888,3 +1888,32 @@ button, .btn, .add-btn { touch-action:manipulation; }
   }
 }
 
+
+
+/* Adicionais selecionáveis no cardápio */
+.extras-box {
+  margin: 14px 0 12px;
+  padding: 12px;
+  border: 1px solid #f0d9df;
+  border-radius: 13px;
+  background: #fff9fa;
+}
+.extras-title {
+  margin: 0 0 8px;
+  color: #7c394b;
+  font-size: .86rem;
+  font-weight: 700;
+}
+.extra-option {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 7px 0;
+  font-size: .84rem;
+  cursor: pointer;
+}
+.extra-option input { accent-color: #9b4056; width: 16px; height: 16px; }
+.extra-option span { flex: 1; }
+.extra-option strong { color: #7c394b; font-size: .8rem; }
+.extras-box > small { display: block; color: #927b82; font-size: .72rem; margin-top: 4px; }
+.cart-extras { display: block; color: #8b5968; margin-top: 3px; }

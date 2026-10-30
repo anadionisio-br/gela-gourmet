@@ -39,6 +39,10 @@
           <span>🍨</span>
           Produtos
         </a>
+        <a href="#adicionais" class="menu-item">
+          <span>🍫</span>
+          Adicionais
+        </a>
 
         <a href="pedidos/pedidos.html" class="menu-item">
           <span>📦</span>
@@ -168,6 +172,22 @@
 
         <div id="productsGrid" class="products-grid">
           <div class="loading">Carregando produtos...</div>
+        </div>
+      </section>
+
+      <section id="adicionais" class="products-section extras-admin-section">
+        <div class="products-header">
+          <div>
+            <h2>Adicionais</h2>
+            <p>Gerencie os complementos que aparecem no cardápio dos clientes.</p>
+          </div>
+          <div class="products-header-actions">
+            <button class="refresh-button" onclick="carregarAdicionais()">↻ Atualizar</button>
+            <button class="add-product-button" onclick="criarAdicional()">＋ Novo adicional</button>
+          </div>
+        </div>
+        <div id="adicionaisGrid" class="products-grid">
+          <div class="loading">Carregando adicionais...</div>
         </div>
       </section>
     </main>

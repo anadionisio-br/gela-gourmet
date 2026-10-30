@@ -1,3 +1,9 @@
+// REGRA DE BLOQUEIO DA LOJA
+// Altere para false para fechar ou true para abrir
+const LOJA_ABERTA = false; 
+
+const MENSAGEM_FECHADO = "Estamos em treinamento/curso no momento e não estamos aceitando pedidos hoje. Voltaremos em breve!";
+
 // =========================================================
 // GELA GOURMET - SCRIPT PRINCIPAL
 // Catálogo (Supabase), carrinho, entrega, checkout e WhatsApp.
@@ -33,8 +39,16 @@ const CITY_SCP = "Santa Cruz das Palmeiras - SP";
 
 // Textos da regra de Santa Cruz das Palmeiras
 const TEXT_DELIVERY_TO_COMBINE = "Valor da entrega a combinar";
-const NOTE_SCP =
-  "Entrega em Santa Cruz das Palmeiras — valor da entrega a combinar";
+const NOTE_SCP = "Entrega em Santa Cruz das Palmeiras — valor da entrega a combinar";
+
+// Função para verificar se a loja está aberta
+function verificarStatusLoja() {
+  const localStatus = localStorage.getItem("LOJA_ABERTA");
+  if (localStatus === "false" || !LOJA_ABERTA) {
+    return false;
+  }
+  return true;
+}
 
 // =========================================================
 // VARIÁVEIS
@@ -42,6 +56,8 @@ const NOTE_SCP =
 
 let products = [];
 let cart = [];
+let adicionais = [];
+let adicionaisSelecionados = {};
 
 // Acompanhamento do pedido
 let pedidoAcompanhado = null;
@@ -58,9 +74,7 @@ const subtotalElement = document.getElementById("subtotal");
 const deliveryElement = document.getElementById("deliveryFee");
 const totalElement = document.getElementById("total");
 
-const reducedMotion = window.matchMedia(
-  "(prefers-reduced-motion: reduce)"
-).matches;
+const reducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
 
 // =========================================================
 // UTILITÁRIOS
@@ -89,13 +103,14 @@ function normalizeText(value) {
     .replace(/[\u0300-\u036f]/g, "");
 }
 
-// Aviso rápido na tela (substitui os alert())
+// Aviso rápido na tela
 let toastTimer = null;
 
 function showToast(message, type) {
   const toast = document.getElementById("toast");
 
   if (!toast) {
+    alert(message);
     return;
   }
 
@@ -163,8 +178,6 @@ function resolveImage(path) {
   return image;
 }
 
-// Foto local de reserva, escolhida pelo nome do sabor
-// (usada só quando a imagem cadastrada não carrega)
 function fallbackImageFor(name) {
   const n = normalizeText(name);
 
@@ -175,9 +188,6 @@ function fallbackImageFor(name) {
   return "";
 }
 
-// Descrição curta pelo ingrediente citado no nome do sabor.
-// Não existe descrição no banco, então nada é inventado além
-// do que o próprio nome do sabor já diz.
 function describeProduct(name) {
   const n = normalizeText(name);
 
@@ -209,8 +219,6 @@ function describeProduct(name) {
   return "Geladinho gourmet cremoso e bem gelado.";
 }
 
-// Cria <img> com troca automática para a foto reserva
-// e, se nada carregar, mostra o selo da marca.
 function buildImage(src, name, className) {
   const img = document.createElement("img");
 
@@ -254,6 +262,7 @@ function buildImage(src, name, className) {
 // =========================================================
 
 function showCatalogMessage(title, text, withRetry) {
+  if (!productsContainer) return;
   productsContainer.innerHTML = `
     <div class="cards-msg">
       <h3>${escapeHtml(title)}</h3>
@@ -292,7 +301,6 @@ async function loadProducts() {
 
     if (error) {
       console.error("❌ ERRO DO SUPABASE:", error);
-
       showCatalogMessage(
         "Não foi possível carregar os sabores",
         "Verifique a conexão com o banco de dados.",
@@ -304,15 +312,29 @@ async function loadProducts() {
     if (!data || data.length === 0) {
       products = [];
       cart = [];
-
       showCatalogMessage(
         "Nenhum sabor cadastrado ainda",
         "Cadastre os sabores na tabela <strong>produtos</strong> do Supabase.",
         false
       );
-
       updateTotal();
       return;
+    }
+
+    const adicionaisResult = await supabaseClient
+      .from("adicionais")
+      .select("id, nome, preco, disponivel")
+      .order("id", { ascending: true });
+
+    if (adicionaisResult.error) {
+      console.error("Erro ao carregar adicionais:", adicionaisResult.error);
+      adicionais = [];
+    } else {
+      adicionais = (adicionaisResult.data || [])
+        .filter(function (item) { return item.disponivel !== false; })
+        .map(function (item) {
+          return { id: item.id, name: item.nome, price: Number(item.preco), disponivel: item.disponivel !== false };
+        });
     }
 
     products = data.map(function (product) {
@@ -326,13 +348,13 @@ async function loadProducts() {
     });
 
     cart = Array(products.length).fill(0);
+    adicionaisSelecionados = {};
 
     renderProducts();
     renderCart();
     updateTotal();
   } catch (error) {
     console.error("❌ ERRO AO CARREGAR PRODUTOS:", error);
-
     showCatalogMessage(
       "Ocorreu um erro ao carregar os sabores",
       "Tente novamente em instantes.",
@@ -346,9 +368,7 @@ async function loadProducts() {
 // =========================================================
 
 function renderProducts() {
-  if (!productsContainer) {
-    return;
-  }
+  if (!productsContainer) return;
 
   productsContainer.innerHTML = "";
 
@@ -363,7 +383,6 @@ function renderProducts() {
       card.classList.add("is-off");
     }
 
-    // ---- foto ----
     const media = document.createElement("div");
     media.className = "card-media";
 
@@ -380,7 +399,6 @@ function renderProducts() {
 
     card.appendChild(media);
 
-    // ---- corpo ----
     const body = document.createElement("div");
     body.className = "card-body";
 
@@ -408,8 +426,21 @@ function renderProducts() {
     body.innerHTML = `
       <h3>${escapeHtml(product.name)}</h3>
       <p class="card-desc">${escapeHtml(describeProduct(product.name))}</p>
+      ${adicionais.length && product.disponivel ? `
+        <div class="extras-box">
+          <p class="extras-title">Adicionais</p>
+          ${adicionais.map(function (extra) {
+            const checked = (adicionaisSelecionados[index] || []).includes(extra.id) ? "checked" : "";
+            return `<label class="extra-option">
+              <input type="checkbox" ${checked} onchange="alternarAdicional(${index}, ${extra.id}, this.checked)">
+              <span>${escapeHtml(extra.name)}</span>
+              <strong>+ ${money(extra.price)}</strong>
+            </label>`;
+          }).join("")}
+          <small>Selecione os adicionais para este sabor.</small>
+        </div>` : ""}
       <div class="card-foot">
-        <strong class="price">${money(product.price)}</strong>
+        <strong class="price">${money(product.price + precoAdicionais(index))}</strong>
         ${action}
       </div>
       ${
@@ -428,22 +459,39 @@ function renderProducts() {
   });
 }
 
+function precoAdicionais(index) {
+  const ids = adicionaisSelecionados[index] || [];
+  return adicionais.reduce(function (total, extra) {
+    return total + (ids.includes(extra.id) ? extra.price : 0);
+  }, 0);
+}
+
+function alternarAdicional(index, id, marcado) {
+  const atuais = adicionaisSelecionados[index] || [];
+  adicionaisSelecionados[index] = marcado
+    ? [...new Set([...atuais, id])]
+    : atuais.filter(function (itemId) { return itemId !== id; });
+  renderProducts();
+  renderCart();
+  updateTotal();
+}
+
+function adicionaisDoProduto(index) {
+  const ids = adicionaisSelecionados[index] || [];
+  return adicionais.filter(function (extra) { return ids.includes(extra.id); });
+}
+
 // =========================================================
-// QUANTIDADE
+// QUANTIDADE E CARRINHO
 // =========================================================
 
 function changeQuantity(index, amount) {
-  if (!products[index] || !products[index].disponivel) {
-    return;
-  }
+  if (!products[index] || !products[index].disponivel) return;
 
   const before = cart[index];
-
   cart[index] = Math.max(0, cart[index] + amount);
 
-  if (cart[index] === before) {
-    return;
-  }
+  if (cart[index] === before) return;
 
   updateQuantityDisplay(index);
   renderCart();
@@ -451,11 +499,9 @@ function changeQuantity(index, amount) {
 
   if (amount > 0) {
     const card = document.querySelector('.card[data-index="' + index + '"]');
-
     if (before === 0) {
       showToast(products[index].name + " adicionado ao pedido");
     }
-
     if (card) {
       flyToCart(card.querySelector(".card-photo"));
     }
@@ -478,36 +524,18 @@ function updateQuantityDisplay(index) {
   }
 }
 
-// Mantidas por compatibilidade com o código anterior
-function addToCart(index) {
-  changeQuantity(index, 1);
-}
-
-function removeFromCart(index) {
-  changeQuantity(index, -1);
-}
-
-// A foto do sabor "voa" até o botão Meu pedido
 function flyToCart(sourceImage) {
-  if (reducedMotion || !sourceImage || sourceImage.dataset.broken) {
-    return;
-  }
+  if (reducedMotion || !sourceImage || sourceImage.dataset.broken) return;
 
   const target = document.getElementById("navCart");
-
-  if (!target) {
-    return;
-  }
+  if (!target) return;
 
   const from = sourceImage.getBoundingClientRect();
   const to = target.getBoundingClientRect();
 
-  if (from.bottom < 0 || from.top > window.innerHeight) {
-    return;
-  }
+  if (from.bottom < 0 || from.top > window.innerHeight) return;
 
   const clone = document.createElement("img");
-
   clone.className = "fly";
   clone.src = sourceImage.currentSrc || sourceImage.src;
   clone.alt = "";
@@ -521,17 +549,14 @@ function flyToCart(sourceImage) {
 
   requestAnimationFrame(function () {
     requestAnimationFrame(function () {
-      clone.style.transform =
-        "translate(" + dx + "px," + dy + "px) scale(.25)";
+      clone.style.transform = "translate(" + dx + "px," + dy + "px) scale(.25)";
       clone.style.opacity = ".15";
     });
   });
 
   setTimeout(function () {
     clone.remove();
-
     const badge = document.getElementById("cartBadge");
-
     if (badge) {
       badge.classList.remove("bump");
       void badge.offsetWidth;
@@ -539,10 +564,6 @@ function flyToCart(sourceImage) {
     }
   }, 760);
 }
-
-// =========================================================
-// PRODUTOS SELECIONADOS E VALORES
-// =========================================================
 
 function getSelectedProducts() {
   return products
@@ -560,7 +581,7 @@ function getSelectedProducts() {
 
 function getSubtotal() {
   return getSelectedProducts().reduce(function (total, item) {
-    return total + item.product.price * item.quantity;
+    return total + (item.product.price + precoAdicionais(item.index)) * item.quantity;
   }, 0);
 }
 
@@ -572,29 +593,22 @@ function getItemCount() {
 
 function getOrderType() {
   const selected = document.querySelector('input[name="orderType"]:checked');
-
   return selected ? selected.value : "delivery";
 }
 
 function getCity() {
   const city = document.getElementById("city");
-
   return city ? city.value : "";
 }
 
-// Entrega em Santa Cruz das Palmeiras: valor combinado depois
 function isDeliveryToCombine() {
   return getOrderType() === "delivery" && getCity() === CITY_SCP;
 }
 
-// Taxa numérica que entra no total.
-// Só Tambaú tem taxa fixa. Santa Cruz das Palmeiras retorna 0
-// porque o valor ainda será combinado (nunca é somado ao total).
 function getDeliveryFee() {
   if (getOrderType() === "delivery" && getCity() === CITY_TAMBAU) {
     return DELIVERY_FEE;
   }
-
   return 0;
 }
 
@@ -602,56 +616,34 @@ function getTotal() {
   return getSubtotal() + getDeliveryFee();
 }
 
-// Texto da linha "Entrega" no resumo
 function getDeliveryLabel() {
-  if (getOrderType() === "pickup") {
-    return "Sem taxa";
-  }
-
-  if (isDeliveryToCombine()) {
-    return TEXT_DELIVERY_TO_COMBINE;
-  }
-
-  if (getCity() === CITY_TAMBAU) {
-    return money(DELIVERY_FEE);
-  }
-
+  if (getOrderType() === "pickup") return "Sem taxa";
+  if (isDeliveryToCombine()) return TEXT_DELIVERY_TO_COMBINE;
+  if (getCity() === CITY_TAMBAU) return money(DELIVERY_FEE);
   return "Informe a cidade";
 }
-
-// =========================================================
-// CARRINHO
-// =========================================================
 
 const renderedCartItems = new Set();
 
 function renderCart() {
-  if (!cartContainer) {
-    return;
-  }
+  if (!cartContainer) return;
 
   const selected = getSelectedProducts();
 
   if (selected.length === 0) {
     renderedCartItems.clear();
-
-    cartContainer.innerHTML =
-      '<p class="empty">Seu carrinho está vazio. 💗</p>';
-
+    cartContainer.innerHTML = '<p class="empty">Seu carrinho está vazio. 💗</p>';
     return;
   }
 
   cartContainer.innerHTML = "";
-
   const stillInCart = new Set();
 
   selected.forEach(function (item) {
     const key = String(item.product.id);
-
     stillInCart.add(key);
 
     const row = document.createElement("div");
-
     row.className = "cart-item";
 
     if (!renderedCartItems.has(key)) {
@@ -663,35 +655,27 @@ function renderCart() {
       item.product.name,
       "cart-thumb"
     );
-
     thumb.loading = "eager";
 
     row.appendChild(thumb);
 
     const info = document.createElement("div");
-
     info.className = "cart-item-info";
     info.innerHTML = `
       <strong>${escapeHtml(item.product.name)}</strong>
-      <small>${item.quantity} × ${money(item.product.price)}</small>
+      <small>${item.quantity} × ${money(item.product.price + precoAdicionais(item.index))}</small>${adicionaisDoProduto(item.index).length ? `<small class="cart-extras">Adicionais: ${adicionaisDoProduto(item.index).map(e => escapeHtml(e.name)).join(", ")}</small>` : ""}
     `;
 
     row.appendChild(info);
 
     const side = document.createElement("div");
-
     side.className = "cart-item-side";
     side.innerHTML = `
-      <span class="cart-item-total">${money(
-        item.product.price * item.quantity
-      )}</span>
-      <div class="qty" role="group"
-        aria-label="Quantidade de ${escapeHtml(item.product.name)}">
-        <button type="button" onclick="changeQuantity(${item.index}, -1)"
-          aria-label="Remover um ${escapeHtml(item.product.name)}">−</button>
+      <span class="cart-item-total">${money((item.product.price + precoAdicionais(item.index)) * item.quantity)}</span>
+      <div class="qty" role="group" aria-label="Quantidade de ${escapeHtml(item.product.name)}">
+        <button type="button" onclick="changeQuantity(${item.index}, -1)">−</button>
         <span>${item.quantity}</span>
-        <button type="button" onclick="changeQuantity(${item.index}, 1)"
-          aria-label="Adicionar mais um ${escapeHtml(item.product.name)}">+</button>
+        <button type="button" onclick="changeQuantity(${item.index}, 1)">+</button>
       </div>
     `;
 
@@ -700,34 +684,20 @@ function renderCart() {
   });
 
   renderedCartItems.clear();
-
   stillInCart.forEach(function (key) {
     renderedCartItems.add(key);
   });
 }
-
-// =========================================================
-// ATUALIZAR TOTAIS
-// =========================================================
 
 function updateTotal() {
   const subtotal = getSubtotal();
   const total = getTotal();
   const combine = isDeliveryToCombine();
 
-  if (subtotalElement) {
-    subtotalElement.textContent = money(subtotal);
-  }
+  if (subtotalElement) subtotalElement.textContent = money(subtotal);
+  if (deliveryElement) deliveryElement.textContent = getDeliveryLabel();
+  if (totalElement) totalElement.textContent = money(total);
 
-  if (deliveryElement) {
-    deliveryElement.textContent = getDeliveryLabel();
-  }
-
-  if (totalElement) {
-    totalElement.textContent = money(total);
-  }
-
-  // Santa Cruz das Palmeiras: o total mostra só os geladinhos
   const totalLabel = document.getElementById("totalLabel");
   const totalNote = document.getElementById("totalNote");
 
@@ -742,7 +712,6 @@ function updateTotal() {
       : "";
   }
 
-  // Aviso dentro do formulário de entrega
   const notice = document.getElementById("deliveryNotice");
 
   if (notice) {
@@ -762,7 +731,6 @@ function updateTotal() {
   updateCartIndicators(subtotal);
 }
 
-// Contador do cabeçalho e barra do pedido (celular)
 function updateCartIndicators(subtotal) {
   const count = getItemCount();
 
@@ -771,17 +739,9 @@ function updateCartIndicators(subtotal) {
   const barCount = document.getElementById("cartBarCount");
   const barTotal = document.getElementById("cartBarTotal");
 
-  if (badge) {
-    badge.textContent = count;
-  }
-
-  if (barCount) {
-    barCount.textContent = count === 1 ? "1 item" : count + " itens";
-  }
-
-  if (barTotal) {
-    barTotal.textContent = money(subtotal);
-  }
+  if (badge) badge.textContent = count;
+  if (barCount) barCount.textContent = count === 1 ? "1 item" : count + " itens";
+  if (barTotal) barTotal.textContent = money(subtotal);
 
   if (bar) {
     bar.dataset.hasItems = count > 0 ? "1" : "";
@@ -795,133 +755,30 @@ let orderSectionVisible = false;
 
 function syncCartBar() {
   const bar = document.getElementById("cartBar");
-
-  if (!bar) {
-    return;
-  }
-
+  if (!bar) return;
   bar.classList.toggle(
     "on",
     bar.dataset.hasItems === "1" && !orderSectionVisible
   );
 }
 
-function setupCartBar() {
-  const section = document.getElementById("pedido");
-
-  if (!section || !("IntersectionObserver" in window)) {
-    return;
-  }
-
-  new IntersectionObserver(function (entries) {
-    orderSectionVisible = entries[0].isIntersecting;
-    syncCartBar();
-  }).observe(section);
-}
-
 // =========================================================
-// ÁREA DO ENDEREÇO
-// =========================================================
-
-function updateAddressVisibility() {
-  const pickup = getOrderType() === "pickup";
-
-  const wrapper = document.getElementById("deliveryFields");
-
-  const city = document.getElementById("city");
-  const street = document.getElementById("street");
-  const number = document.getElementById("number");
-  const neighborhood = document.getElementById("neighborhood");
-
-  const fields = [city, street, number, neighborhood].filter(Boolean);
-
-  if (wrapper) {
-    wrapper.style.display = pickup ? "none" : "";
-  }
-
-  if (pickup) {
-    fields.forEach(function (field) {
-      field.disabled = true;
-      field.value = "";
-      field.classList.remove("field-error");
-    });
-
-    return;
-  }
-
-  fields.forEach(function (field) {
-    field.disabled = false;
-  });
-
-  const hasCity = !!(city && city.value);
-
-  if (street) {
-    street.disabled = !hasCity;
-  }
-
-  if (neighborhood) {
-    neighborhood.disabled = !hasCity;
-  }
-}
-
-function updateOrderType() {
-  updateAddressVisibility();
-  updateTotal();
-}
-
-function getAddress() {
-  if (getOrderType() === "pickup") {
-    return "Retirada no local";
-  }
-
-  const street = document.getElementById("street");
-  const number = document.getElementById("number");
-  const neighborhood = document.getElementById("neighborhood");
-
-  return [
-    getCity(),
-    street ? street.value.trim() : "",
-    number ? number.value.trim() : "",
-    neighborhood ? neighborhood.value.trim() : ""
-  ]
-    .filter(function (value) {
-      return value !== "";
-    })
-    .join(", ");
-}
-
-// =========================================================
-// ITENS DO PEDIDO
-// =========================================================
-
-function buildOrderItems() {
-  return getSelectedProducts().map(function (item) {
-    return {
-      id: item.product.id,
-      nome: item.product.name,
-      quantidade: item.quantity,
-      preco: item.product.price,
-      subtotal: item.product.price * item.quantity
-    };
-  });
-}
-
-// =========================================================
-// VALIDAR PEDIDO
+// VALIDAR E FINALIZAR PEDIDO
 // =========================================================
 
 function validateOrder() {
+  // BLOQUEIO SE A LOJA ESTIVER FECHADA
+  if (!verificarStatusLoja()) {
+    alert(MENSAGEM_FECHADO);
+    return false;
+  }
+
   if (getSelectedProducts().length === 0) {
     showToast("Adicione pelo menos um sabor ao pedido.", "error");
-
     const section = document.getElementById("cardapio");
-
     if (section) {
-      section.scrollIntoView({
-        behavior: reducedMotion ? "auto" : "smooth"
-      });
+      section.scrollIntoView({ behavior: reducedMotion ? "auto" : "smooth" });
     }
-
     return false;
   }
 
@@ -935,315 +792,32 @@ function validateOrder() {
     const number = document.getElementById("number");
     const neighborhood = document.getElementById("neighborhood");
 
-    if (!city.value) {
-      return failField("Selecione a cidade para a entrega.", city);
-    }
-
-    if (!street.value.trim()) {
-      return failField("Informe a rua da entrega.", street);
-    }
-
-    if (!number.value.trim()) {
-      return failField("Informe o número do endereço.", number);
-    }
-
-    if (!neighborhood.value.trim()) {
-      return failField("Informe o bairro.", neighborhood);
-    }
+    if (!city.value) return failField("Selecione a cidade para a entrega.", city);
+    if (!street.value.trim()) return failField("Informe a rua da entrega.", street);
+    if (!number.value.trim()) return failField("Informe o número do endereço.", number);
+    if (!neighborhood.value.trim()) return failField("Informe o bairro.", neighborhood);
   }
 
-  if (!nameInput.value.trim()) {
-    return failField("Digite seu nome.", nameInput);
-  }
-
-  if (!phoneInput.value.trim()) {
-    return failField("Digite seu telefone.", phoneInput);
-  }
-
-  if (phoneInput.value.replace(/\D/g, "").length < 10) {
-    return failField("Digite um telefone com DDD.", phoneInput);
-  }
-
-  if (!paymentInput.value) {
-    return failField("Selecione a forma de pagamento.", paymentInput);
-  }
+  if (!nameInput.value.trim()) return failField("Digite seu nome.", nameInput);
+  if (!phoneInput.value.trim()) return failField("Digite seu telefone.", phoneInput);
+  if (phoneInput.value.replace(/\D/g, "").length < 10) return failField("Digite um telefone com DDD.", phoneInput);
+  if (!paymentInput.value) return failField("Selecione a forma de pagamento.", paymentInput);
 
   return true;
 }
 
-function paymentLabel(payment) {
-  const labels = {
-    pix: "PIX",
-    dinheiro: "Dinheiro",
-    cartao: "Cartão"
-  };
-
-  return labels[payment] || payment || "Não informado";
-}
-
-// =========================================================
-// STATUS DO PEDIDO
-// =========================================================
-
-function getStatusPedidoInfo(status) {
-  const statusInfo = {
-    pendente: {
-      titulo: "Pedido recebido!",
-      mensagem: "Seu pedido foi recebido e está aguardando confirmação.",
-      icone: "🕐"
-    },
-    preparo: {
-      titulo: "Seu pedido está sendo preparado!",
-      mensagem:
-        "Já começamos a preparar seus geladinhos. Em breve estará prontinho!",
-      icone: "👩‍🍳"
-    },
-    entrega: {
-      titulo: "Seu pedido saiu para entrega!",
-      mensagem:
-        "Seu pedido já está a caminho. Fique de olho porque ele chegará em breve!",
-      icone: "🛵"
-    },
-    entregue: {
-      titulo: "Pedido entregue!",
-      mensagem: "Seu pedido foi entregue. Esperamos que você aproveite muito!",
-      icone: "💗"
-    },
-    cancelado: {
-      titulo: "Pedido cancelado",
-      mensagem:
-        "Infelizmente, seu pedido foi cancelado. Entre em contato com a Gela Gourmet se precisar de ajuda.",
-      icone: "❌"
-    }
-  };
-
-  return (
-    statusInfo[status] || {
-      titulo: "Status atualizado",
-      mensagem: "Seu pedido teve uma atualização.",
-      icone: "📦"
-    }
-  );
-}
-
-function salvarPedidoAcompanhado(pedidoId, telefone, status, token) {
-  const dados = {
-    pedidoId: pedidoId,
-    telefone: telefone,
-    status: status || "pendente",
-    token: token || null,
-    salvoEm: Date.now()
-  };
-
-  localStorage.setItem("gelaGourmetPedido", JSON.stringify(dados));
-
-  pedidoAcompanhado = dados;
-  statusAnteriorPedido = dados.status;
-}
-
-function recuperarPedidoAcompanhado() {
-  try {
-    const salvo = localStorage.getItem("gelaGourmetPedido");
-
-    if (!salvo) {
-      return null;
-    }
-
-    const dados = JSON.parse(salvo);
-
-    if (!dados || !dados.pedidoId) {
-      return null;
-    }
-
-    return dados;
-  } catch (error) {
-    console.error("Erro ao recuperar pedido:", error);
-    return null;
-  }
-}
-
-async function consultarStatusPedido() {
-  if (!pedidoAcompanhado || !pedidoAcompanhado.telefone || !supabaseClient) {
+function finalizarPedido() {
+  if (!validateOrder()) {
     return;
   }
 
-  try {
-    const result = await supabaseClient.rpc("consultar_status_pedido", {
-      p_pedido_id: pedidoAcompanhado.pedidoId,
-      p_telefone: pedidoAcompanhado.telefone
-    });
-
-    if (result.error) {
-      console.error("Erro ao consultar status:", result.error);
-      return;
-    }
-
-    const dados = result.data;
-
-    if (!dados || !Array.isArray(dados) || dados.length === 0) {
-      return;
-    }
-
-    const novoStatus = dados[0].status;
-
-    if (statusAnteriorPedido && novoStatus !== statusAnteriorPedido) {
-      mostrarAtualizacaoStatus(novoStatus);
-    }
-
-    statusAnteriorPedido = novoStatus;
-    pedidoAcompanhado.status = novoStatus;
-
-    localStorage.setItem(
-      "gelaGourmetPedido",
-      JSON.stringify(pedidoAcompanhado)
-    );
-  } catch (error) {
-    console.error("Erro ao acompanhar pedido:", error);
-  }
+  alert("Iniciando envio do pedido...");
 }
 
-function iniciarAcompanhamentoPedido() {
-  if (!pedidoAcompanhado) {
-    return;
-  }
-
-  if (intervaloStatusPedido) {
-    clearInterval(intervaloStatusPedido);
-  }
-
-  consultarStatusPedido();
-
-  intervaloStatusPedido = setInterval(consultarStatusPedido, 10000);
-}
-
-function pararAcompanhamentoPedido() {
-  if (intervaloStatusPedido) {
-    clearInterval(intervaloStatusPedido);
-    intervaloStatusPedido = null;
-  }
-}
-
-function mostrarAtualizacaoStatus(status) {
-  const info = getStatusPedidoInfo(status);
-
-  const existente = document.querySelector(".status-update-overlay");
-
-  if (existente) {
-    existente.remove();
-  }
-
-  const overlay = document.createElement("div");
-
-  overlay.className = "status-update-overlay";
-
-  overlay.innerHTML = `
-    <div class="status-update-modal" role="dialog" aria-modal="true">
-      <button type="button" class="status-update-close" aria-label="Fechar">×</button>
-      <div class="status-update-icon">${info.icone}</div>
-      <span class="status-update-small">Atualização do pedido</span>
-      <h2>${escapeHtml(info.titulo)}</h2>
-      <p>${escapeHtml(info.mensagem)}</p>
-      <div class="status-update-number">
-        Pedido <strong>#${escapeHtml(pedidoAcompanhado.pedidoId)}</strong>
-      </div>
-      <button type="button" class="status-update-button" id="fecharStatusUpdate">Entendi</button>
-    </div>
-  `;
-
-  document.body.appendChild(overlay);
-  document.body.style.overflow = "hidden";
-
-  function fechar() {
-    overlay.remove();
-    document.body.style.overflow = "";
-  }
-
-  overlay
-    .querySelector(".status-update-close")
-    .addEventListener("click", fechar);
-
-  overlay
-    .querySelector("#fecharStatusUpdate")
-    .addEventListener("click", fechar);
-
-  overlay.addEventListener("click", function (event) {
-    if (event.target === overlay) {
-      fechar();
-    }
-  });
-}
-
-function mostrarPedidoEmAndamento() {
-  if (!pedidoAcompanhado) {
-    return;
-  }
-
-  const existente = document.querySelector(".pedido-acompanhamento");
-
-  if (existente) {
-    existente.remove();
-  }
-
-  const info = getStatusPedidoInfo(pedidoAcompanhado.status || "pendente");
-
-  const acompanhamento = document.createElement("div");
-
-  acompanhamento.className = "pedido-acompanhamento";
-
-  acompanhamento.innerHTML = `
-    <div class="pedido-acompanhamento-icon">${info.icone}</div>
-    <div class="pedido-acompanhamento-info">
-      <span>Pedido #${escapeHtml(pedidoAcompanhado.pedidoId)}</span>
-      <strong>${escapeHtml(info.titulo)}</strong>
-      <small>${escapeHtml(info.mensagem)}</small>
-    </div>
-    <button type="button" id="fecharAcompanhamento" aria-label="Fechar acompanhamento">×</button>
-  `;
-
-  document.body.appendChild(acompanhamento);
-
-  acompanhamento
-    .querySelector("#fecharAcompanhamento")
-    .addEventListener("click", function () {
-      acompanhamento.remove();
-    });
-}
-
-function verificarPedidoSalvo() {
-  const pedido = recuperarPedidoAcompanhado();
-
-  if (!pedido) {
-    return;
-  }
-
-  pedidoAcompanhado = pedido;
-  statusAnteriorPedido = pedido.status || null;
-
-  iniciarAcompanhamentoPedido();
-}
-
-// =========================================================
-// MODAL DE SUCESSO
-// =========================================================
-
-function mostrarPedidoSucesso(
-  pedidoId,
-  token,
-  itens,
-  total,
-  whatsappUrl,
-  entrega
-) {
-  const itensHtml = itens
-    .map(function (item) {
-      return `
-        <div class="success-item">
-          <span>${item.quantidade}× ${escapeHtml(item.nome)}</span>
-          <strong>${money(item.subtotal)}</strong>
-        </div>
-      `;
-    })
-    .join("");
+// Inicializa a aplicação
+document.addEventListener("DOMContentLoaded", function () {
+  loadProducts();
+});
 
   const combine = !!(entrega && entrega.combinar);
 
@@ -1351,11 +925,28 @@ function mostrarPedidoSucesso(
     .addEventListener("click", function () {
       window.open(whatsappUrl, "_blank");
     });
-}
+
 
 // =========================================================
 // MENSAGEM DO WHATSAPP
 // =========================================================
+
+function buildOrderItems() {
+  return getSelectedProducts().map(function (item) {
+    const extras = adicionaisDoProduto(item.index);
+    const valorAdicionais = extras.reduce(function (sum, extra) { return sum + extra.price; }, 0);
+    const unitario = item.product.price + valorAdicionais;
+    const nome = item.product.name + (extras.length ? " (Adicionais: " + extras.map(e => e.name).join(", ") + ")" : "");
+    return {
+      produto_id: item.product.id,
+      nome: nome,
+      quantidade: item.quantity,
+      preco_unitario: unitario,
+      subtotal: unitario * item.quantity,
+      adicionais: extras.map(function (extra) { return { id: extra.id, nome: extra.name, preco: extra.price }; })
+    };
+  });
+}
 
 function buildWhatsappMessage(data) {
   let message = "🍓 *GELA GOURMET* 🍓\n\n";
@@ -1575,6 +1166,7 @@ async function createOrder() {
 
     // Limpa carrinho e campos
     cart = Array(products.length).fill(0);
+    adicionaisSelecionados = {};
 
     renderProducts();
     renderCart();
