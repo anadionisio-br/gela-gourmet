@@ -1,9 +1,3 @@
-// REGRA DE BLOQUEIO DA LOJA
-// Altere para false para fechar ou true para abrir
-const LOJA_ABERTA = false; 
-
-const MENSAGEM_FECHADO = "Estamos em treinamento/curso no momento e não estamos aceitando pedidos hoje. Voltaremos em breve!";
-
 // =========================================================
 // GELA GOURMET - SCRIPT PRINCIPAL
 // Catálogo (Supabase), carrinho, entrega, checkout e WhatsApp.
@@ -41,13 +35,73 @@ const CITY_SCP = "Santa Cruz das Palmeiras - SP";
 const TEXT_DELIVERY_TO_COMBINE = "Valor da entrega a combinar";
 const NOTE_SCP = "Entrega em Santa Cruz das Palmeiras — valor da entrega a combinar";
 
-// Função para verificar se a loja está aberta
+// =========================================================
+// STATUS DA LOJA (controlado pelo painel admin)
+// O status fica na tabela "configuracoes_loja" do Supabase.
+// =========================================================
+
+const MENSAGEM_FECHADO_PADRAO =
+  "Estamos fechados no momento e não estamos aceitando pedidos. Voltaremos em breve!";
+
+let lojaAberta = true;
+let mensagemFechado = MENSAGEM_FECHADO_PADRAO;
+
 function verificarStatusLoja() {
-  const localStatus = localStorage.getItem("LOJA_ABERTA");
-  if (localStatus === "false" || !LOJA_ABERTA) {
-    return false;
+  return lojaAberta;
+}
+
+function aplicarStatusLoja() {
+  const banner = document.getElementById("lojaBanner");
+
+  if (banner) {
+    banner.hidden = lojaAberta;
+    banner.textContent = lojaAberta ? "" : "🔒 " + mensagemFechado;
   }
-  return true;
+
+  document.body.classList.toggle("loja-fechada", !lojaAberta);
+
+  const botao = document.getElementById("sendOrder");
+
+  if (botao) {
+    botao.disabled = !lojaAberta;
+    botao.textContent = lojaAberta
+      ? "Finalizar pelo WhatsApp"
+      : "Loja fechada no momento";
+  }
+}
+
+async function carregarStatusLoja() {
+  if (!supabaseClient) return;
+
+  try {
+    const { data, error } = await supabaseClient
+      .from("configuracoes_loja")
+      .select("loja_aberta, mensagem_fechado")
+      .eq("id", 1)
+      .maybeSingle();
+
+    // Sem tabela/linha ainda: não bloqueia a loja por engano
+    if (error || !data) {
+      if (error) console.error("Erro ao ler status da loja:", error);
+      return;
+    }
+
+    lojaAberta = data.loja_aberta !== false;
+    mensagemFechado = (data.mensagem_fechado || "").trim() || MENSAGEM_FECHADO_PADRAO;
+    aplicarStatusLoja();
+  } catch (erro) {
+    console.error("Erro ao ler status da loja:", erro);
+  }
+}
+
+// Mantém o site atualizado sem o cliente precisar recarregar a página
+function iniciarMonitorLoja() {
+  carregarStatusLoja();
+  setInterval(carregarStatusLoja, 30000);
+
+  document.addEventListener("visibilitychange", function () {
+    if (!document.hidden) carregarStatusLoja();
+  });
 }
 
 // =========================================================
@@ -488,6 +542,12 @@ function adicionaisDoProduto(index) {
 function changeQuantity(index, amount) {
   if (!products[index] || !products[index].disponivel) return;
 
+  // Loja fechada: não deixa adicionar itens (remover continua permitido)
+  if (!lojaAberta && amount > 0) {
+    showToast(mensagemFechado, "error");
+    return;
+  }
+
   const before = cart[index];
   cart[index] = Math.max(0, cart[index] + amount);
 
@@ -766,10 +826,36 @@ function syncCartBar() {
 // VALIDAR E FINALIZAR PEDIDO
 // =========================================================
 
+function getAddress() {
+  if (getOrderType() === "pickup") {
+    return "Retirada no local";
+  }
+
+  const city = getCity();
+  const street = (document.getElementById("street")?.value || "").trim();
+  const number = (document.getElementById("number")?.value || "").trim();
+  const neighborhood = (document.getElementById("neighborhood")?.value || "").trim();
+
+  return `${street}, Nº ${number} - ${neighborhood}, ${city}`;
+}
+
+function paymentLabel(payment) {
+  switch (payment) {
+    case "pix":
+      return "Pix";
+    case "dinheiro":
+      return "Dinheiro";
+    case "cartao":
+      return "Cartão";
+    default:
+      return payment;
+  }
+}
+
 function validateOrder() {
   // BLOQUEIO SE A LOJA ESTIVER FECHADA
   if (!verificarStatusLoja()) {
-    alert(MENSAGEM_FECHADO);
+    showToast(mensagemFechado, "error");
     return false;
   }
 
@@ -806,62 +892,41 @@ function validateOrder() {
   return true;
 }
 
-function finalizarPedido() {
-  if (!validateOrder()) {
-    return;
-  }
+function mostrarPedidoSucesso(pedidoId, token, itens, total, whatsappUrl, entrega) {
+  const combine = isDeliveryToCombine();
 
-  alert("Iniciando envio do pedido...");
-}
-
-// Inicializa a aplicação
-document.addEventListener("DOMContentLoaded", function () {
-  loadProducts();
-});
-
-  const combine = !!(entrega && entrega.combinar);
+  const itensHtml = itens
+    .map(function (item) {
+      return `<p>• ${item.quantidade}x ${escapeHtml(item.nome)} - ${money(item.subtotal)}</p>`;
+    })
+    .join("");
 
   const modal = document.createElement("div");
-
   modal.className = "success-overlay";
 
   modal.innerHTML = `
     <div class="success-modal" role="dialog" aria-modal="true">
       <button type="button" class="success-close" aria-label="Fechar">×</button>
-
       <div class="success-icon">✓</div>
-
       <span class="success-small">Pedido recebido</span>
-
       <h2>Tudo certo!</h2>
-
       <p class="success-message">
         Seu pedido foi registrado. Obrigada por escolher a Gela Gourmet!
       </p>
-
       <div class="success-number">
         <span>Número do pedido</span>
         <strong>#${escapeHtml(pedidoId)}</strong>
       </div>
-
       <div class="success-items">${itensHtml}</div>
-
       <div class="success-sum">
         <span>Entrega</span>
         <strong>${escapeHtml(entrega ? entrega.texto : "")}</strong>
       </div>
-
       <div class="success-total">
         <span>${combine ? "Total dos geladinhos" : "Total"}</span>
         <strong>${money(total)}</strong>
       </div>
-
-      ${
-        combine
-          ? '<p class="success-note">' + escapeHtml(NOTE_SCP) + ".</p>"
-          : ""
-      }
-
+      ${combine ? '<p class="success-note">' + escapeHtml(NOTE_SCP) + ".</p>" : ""}
       <div class="success-actions">
         <button type="button" class="success-track" id="successTrack">Acompanhar pedido</button>
         <button type="button" class="success-whatsapp" id="successWhatsapp">Abrir WhatsApp novamente</button>
@@ -882,9 +947,7 @@ document.addEventListener("DOMContentLoaded", function () {
 
   modal.querySelector("#successHome").addEventListener("click", function () {
     fecharModal();
-
     const section = document.getElementById("cardapio");
-
     if (section) {
       section.scrollIntoView({ behavior: reducedMotion ? "auto" : "smooth" });
     }
@@ -902,9 +965,7 @@ document.addEventListener("DOMContentLoaded", function () {
         "O pedido foi criado, mas o banco não retornou o código de acompanhamento.",
         "error"
       );
-
       console.error("Token do pedido não encontrado.");
-
       return;
     }
 
@@ -915,17 +976,13 @@ document.addEventListener("DOMContentLoaded", function () {
     };
 
     localStorage.setItem("gelaGourmetPedido", JSON.stringify(dados));
-
-    window.location.href =
-      "acompanhar-pedido.html?token=" + encodeURIComponent(token);
+    window.location.href = "acompanhar-pedido.html?token=" + encodeURIComponent(token);
   });
 
-  modal
-    .querySelector("#successWhatsapp")
-    .addEventListener("click", function () {
-      window.open(whatsappUrl, "_blank");
-    });
-
+  modal.querySelector("#successWhatsapp").addEventListener("click", function () {
+    window.open(whatsappUrl, "_blank");
+  });
+}
 
 // =========================================================
 // MENSAGEM DO WHATSAPP
@@ -1200,21 +1257,71 @@ async function createOrder() {
       whatsappWindow.close();
     }
 
-    showToast(
-      "Não foi possível registrar o pedido. Tente novamente em instantes.",
-      "error"
-    );
+    if (String((error && error.message) || "").includes("LOJA_FECHADA")) {
+      // A loja foi fechada enquanto o cliente montava o pedido
+      lojaAberta = false;
+      aplicarStatusLoja();
+      showToast(mensagemFechado, "error");
+    } else {
+      showToast(
+        "Não foi possível registrar o pedido. Tente novamente em instantes.",
+        "error"
+      );
+    }
   } finally {
     if (button) {
       button.disabled = false;
       button.innerHTML = originalText || "Finalizar pelo WhatsApp";
     }
+
+    aplicarStatusLoja();
   }
 }
 
 // =========================================================
 // CONFIGURAÇÃO DOS CAMPOS
 // =========================================================
+
+function updateOrderType() {
+  const orderType = getOrderType();
+  const isPickup = orderType === "pickup";
+
+  const deliveryFields = document.getElementById("deliveryFields");
+  const city = document.getElementById("city");
+  const street = document.getElementById("street");
+  const number = document.getElementById("number");
+  const neighborhood = document.getElementById("neighborhood");
+
+  if (deliveryFields) {
+    deliveryFields.hidden = isPickup;
+  }
+
+  if (city) {
+    city.disabled = isPickup;
+  }
+
+  const hasCity = city && city.value.trim() !== "";
+
+  if (street) {
+    street.disabled = isPickup || !hasCity;
+    street.placeholder = hasCity
+      ? "Digite sua rua..."
+      : "Escolha a cidade primeiro...";
+  }
+
+  if (number) {
+    number.disabled = isPickup;
+  }
+
+  if (neighborhood) {
+    neighborhood.disabled = isPickup || !hasCity;
+    neighborhood.placeholder = hasCity
+      ? "Digite seu bairro..."
+      : "Escolha a cidade primeiro...";
+  }
+
+  updateTotal();
+}
 
 function setupOrderButton() {
   const button = document.getElementById("sendOrder");
@@ -1259,35 +1366,38 @@ function setupPhoneMask() {
 
 function setupCity() {
   const city = document.getElementById("city");
-  const street = document.getElementById("street");
-  const neighborhood = document.getElementById("neighborhood");
 
   if (!city) {
+    console.error("Campo de cidade não encontrado.");
     return;
   }
 
   city.addEventListener("change", function () {
-    const hasCity = city.value !== "";
-
-    if (getOrderType() !== "pickup") {
-      if (street) {
-        street.disabled = !hasCity;
-        street.placeholder = hasCity
-          ? "Digite sua rua..."
-          : "Escolha a cidade primeiro...";
-      }
-
-      if (neighborhood) {
-        neighborhood.disabled = !hasCity;
-        neighborhood.placeholder = hasCity
-          ? "Digite seu bairro..."
-          : "Escolha a cidade primeiro...";
-      }
-    }
-
-    // Recalcula entrega, total e aviso conforme a cidade escolhida
+    updateOrderType();
     updateTotal();
   });
+
+  updateOrderType();
+}
+
+function setupCartBar() {
+  const bar = document.getElementById("cartBar");
+  if (!bar) return;
+
+  const orderSection = document.getElementById("pedido");
+  if (!orderSection) return;
+
+  const observer = new IntersectionObserver(
+    function (entries) {
+      entries.forEach(function (entry) {
+        orderSectionVisible = entry.isIntersecting;
+        syncCartBar();
+      });
+    },
+    { threshold: 0.1 }
+  );
+
+  observer.observe(orderSection);
 }
 
 // Botões "Acompanhar pedido" (cabeçalho e rodapé)
@@ -1326,6 +1436,7 @@ function setupTrackButtons() {
 // =========================================================
 
 document.addEventListener("DOMContentLoaded", function () {
+  iniciarMonitorLoja();
   loadProducts();
 
   setupOrderButton();

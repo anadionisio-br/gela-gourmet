@@ -586,3 +586,99 @@ nav {
 @media (max-width: 900px) {
   .extras-admin-section .products-header { align-items: flex-start; flex-direction: column; }
 }
+
+/* =========================
+   CONTROLE DA LOJA
+========================= */
+
+.top-actions { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
+
+.loja-pill {
+    padding: 9px 13px;
+    border-radius: 30px;
+    font-size: 12px;
+    font-weight: bold;
+    border: 1px solid transparent;
+}
+.loja-pill-on  { background: #e7f6ed; color: #1f7a45; border-color: #bfe5cd; }
+.loja-pill-off { background: #fdeaea; color: #b3261e; border-color: #f4c7c3; }
+
+.store-control {
+    background: white;
+    border: 1px solid #eee5e7;
+    border-radius: 17px;
+    padding: 24px;
+    margin-bottom: 30px;
+}
+
+.store-control.is-closed { border-color: #f4c7c3; background: #fffafa; }
+
+.store-control-head {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: 16px;
+    margin-bottom: 18px;
+}
+
+.store-control-head h2 { font-size: 20px; color: #3d292f; }
+.store-control-head p { margin-top: 6px; color: #99888d; font-size: 14px; }
+
+.store-badge {
+    padding: 9px 16px;
+    border-radius: 30px;
+    font-size: 13px;
+    font-weight: bold;
+    white-space: nowrap;
+}
+.store-badge-open    { background: #e7f6ed; color: #1f7a45; }
+.store-badge-closed  { background: #fdeaea; color: #b3261e; }
+.store-badge-loading { background: #f3eef0; color: #8a797e; }
+
+.store-control .form-group { margin-bottom: 16px; }
+.store-control .form-group label { display: block; font-size: 13px; font-weight: bold; margin-bottom: 8px; color: #3b292e; }
+.store-control textarea {
+    width: 100%;
+    padding: 12px 13px;
+    border: 1px solid #e4dadd;
+    border-radius: 10px;
+    outline: none;
+    resize: vertical;
+    font-family: inherit;
+    font-size: 14px;
+    color: #3b292e;
+    background: white;
+}
+.store-control textarea:focus { border-color: #9b4056; box-shadow: 0 0 0 3px rgba(155, 64, 86, .08); }
+
+.store-control-actions {
+    display: flex;
+    justify-content: flex-end;
+    align-items: center;
+    gap: 12px;
+    flex-wrap: wrap;
+}
+
+.store-toggle {
+    border: none;
+    border-radius: 10px;
+    padding: 13px 22px;
+    font-family: inherit;
+    font-size: 14px;
+    font-weight: bold;
+    cursor: pointer;
+    color: white;
+    transition: filter .2s, transform .1s;
+}
+.store-toggle:hover:not(:disabled) { filter: brightness(1.08); }
+.store-toggle:active:not(:disabled) { transform: scale(.98); }
+.store-toggle:disabled { opacity: .6; cursor: wait; }
+.store-toggle.do-close { background: #c62828; }
+.store-toggle.do-open  { background: #2e9e5b; }
+
+@media (max-width: 700px) {
+    .store-control { padding: 18px; }
+    .store-control-head { flex-direction: column; }
+    .store-control-actions { flex-direction: column-reverse; align-items: stretch; }
+    .store-control-actions button { width: 100%; }
+}

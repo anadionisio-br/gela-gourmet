@@ -35,6 +35,11 @@
           Painel
         </a>
 
+        <a href="#loja" class="menu-item">
+          <span>🏪</span>
+          Loja
+        </a>
+
         <a href="#produtos" class="menu-item">
           <span>🍨</span>
           Produtos
@@ -92,8 +97,45 @@
 
             Sistema online
           </span>
+
+          <span id="lojaPill" class="loja-pill loja-pill-off">Carregando loja...</span>
         </div>
       </header>
+
+      <!-- =========================
+             STATUS DA LOJA
+        ========================== -->
+
+      <section id="loja" class="store-control">
+        <div class="store-control-head">
+          <div>
+            <h2>Status da loja</h2>
+            <p>Feche a loja para bloquear novos pedidos no site e abra quando quiser voltar.</p>
+          </div>
+
+          <div id="lojaStatusBadge" class="store-badge store-badge-loading">Carregando...</div>
+        </div>
+
+        <div class="form-group">
+          <label for="mensagemLoja">Mensagem exibida aos clientes quando a loja estiver fechada</label>
+          <textarea
+            id="mensagemLoja"
+            rows="2"
+            maxlength="200"
+            placeholder="Ex: Estamos fechados hoje. Voltamos amanhã às 13h!"
+          ></textarea>
+        </div>
+
+        <div class="store-control-actions">
+          <button id="btnSalvarMensagemLoja" class="refresh-button" onclick="salvarMensagemLoja()">
+            💾 Salvar mensagem
+          </button>
+
+          <button id="btnAlternarLoja" class="store-toggle" onclick="alternarLoja()" disabled>
+            Carregando...
+          </button>
+        </div>
+      </section>
 
       <!-- =========================
              CARDS DE RESUMO

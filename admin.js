@@ -759,12 +759,130 @@ async function excluirAdicional(id) {
 }
 
 
+
+// =========================
+// CONTROLE DA LOJA (ABRIR / FECHAR)
+// =========================
+let lojaConfig = { loja_aberta: true, mensagem_fechado: "" };
+let lojaCarregada = false;
+
+function renderLoja() {
+  const aberta = lojaConfig.loja_aberta !== false;
+
+  const badge = document.getElementById("lojaStatusBadge");
+  const pill = document.getElementById("lojaPill");
+  const botao = document.getElementById("btnAlternarLoja");
+  const secao = document.getElementById("loja");
+  const mensagem = document.getElementById("mensagemLoja");
+
+  if (badge) {
+    badge.className = "store-badge " + (aberta ? "store-badge-open" : "store-badge-closed");
+    badge.textContent = aberta ? "🟢 Loja ABERTA" : "🔴 Loja FECHADA";
+  }
+
+  if (pill) {
+    pill.className = "loja-pill " + (aberta ? "loja-pill-on" : "loja-pill-off");
+    pill.textContent = aberta ? "Loja aberta" : "Loja fechada";
+  }
+
+  if (secao) secao.classList.toggle("is-closed", !aberta);
+
+  if (botao) {
+    botao.disabled = !lojaCarregada;
+    botao.className = "store-toggle " + (aberta ? "do-close" : "do-open");
+    botao.textContent = aberta ? "🔒 Fechar loja" : "🔓 Abrir loja";
+  }
+
+  if (mensagem && document.activeElement !== mensagem) {
+    mensagem.value = lojaConfig.mensagem_fechado || "";
+  }
+}
+
+async function carregarLoja() {
+  const { data, error } = await supabaseClient
+    .from("configuracoes_loja")
+    .select("loja_aberta, mensagem_fechado")
+    .eq("id", 1)
+    .maybeSingle();
+
+  if (error || !data) {
+    console.error("Erro ao carregar status da loja:", error);
+    const badge = document.getElementById("lojaStatusBadge");
+    if (badge) {
+      badge.className = "store-badge store-badge-loading";
+      badge.textContent = "Execute o setup-loja.sql no Supabase";
+    }
+    const pill = document.getElementById("lojaPill");
+    if (pill) pill.textContent = "Loja: não configurada";
+    return;
+  }
+
+  lojaConfig = data;
+  lojaCarregada = true;
+  renderLoja();
+}
+
+async function alternarLoja() {
+  if (!lojaCarregada) return;
+
+  const abrir = lojaConfig.loja_aberta === false;
+  const pergunta = abrir
+    ? "Abrir a loja? Os clientes poderão fazer pedidos novamente."
+    : "Fechar a loja? Os clientes não conseguirão fazer novos pedidos.";
+
+  if (!confirm(pergunta)) return;
+
+  const botao = document.getElementById("btnAlternarLoja");
+  if (botao) botao.disabled = true;
+
+  const { error } = await supabaseClient
+    .from("configuracoes_loja")
+    .update({ loja_aberta: abrir, atualizado_em: new Date().toISOString() })
+    .eq("id", 1);
+
+  if (error) {
+    console.error(error);
+    alert("Não foi possível alterar o status da loja:\n" + error.message);
+    if (botao) botao.disabled = false;
+    return;
+  }
+
+  lojaConfig.loja_aberta = abrir;
+  renderLoja();
+}
+
+async function salvarMensagemLoja() {
+  const campo = document.getElementById("mensagemLoja");
+  if (!campo) return;
+
+  const texto = campo.value.trim();
+  if (!texto) {
+    alert("Escreva uma mensagem para os clientes.");
+    return;
+  }
+
+  const { error } = await supabaseClient
+    .from("configuracoes_loja")
+    .update({ mensagem_fechado: texto, atualizado_em: new Date().toISOString() })
+    .eq("id", 1);
+
+  if (error) {
+    console.error(error);
+    alert("Não foi possível salvar a mensagem:\n" + error.message);
+    return;
+  }
+
+  lojaConfig.mensagem_fechado = texto;
+  alert("Mensagem salva!");
+}
+
 // =========================
 // INICIAR PAINEL
 // =========================
 
 verificarLogin().then((logado) => {
   if (logado) {
+    carregarLoja();
     carregarProdutos();
     carregarAdicionais();
   }

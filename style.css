@@ -1917,3 +1917,29 @@ button, .btn, .add-btn { touch-action:manipulation; }
 .extra-option strong { color: #7c394b; font-size: .8rem; }
 .extras-box > small { display: block; color: #927b82; font-size: .72rem; margin-top: 4px; }
 .cart-extras { display: block; color: #8b5968; margin-top: 3px; }
+
+
+/* =========================================================
+   AVISO DE LOJA FECHADA
+   ========================================================= */
+
+.loja-banner {
+    padding: 11px 20px;
+    background: #B23A55;
+    color: #fff;
+    text-align: center;
+    font-size: .95rem;
+    font-weight: 600;
+    line-height: 1.35;
+}
+
+.loja-banner[hidden] { display: none; }
+
+body.loja-fechada .add-btn,
+body.loja-fechada .qty button,
+body.loja-fechada #sendOrder {
+    opacity: .55;
+    cursor: not-allowed;
+}
+
+body.loja-fechada .card:not(.is-off) .card-photo { filter: grayscale(.35); }
