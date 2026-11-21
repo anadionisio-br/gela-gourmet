@@ -892,7 +892,7 @@ function validateOrder() {
   return true;
 }
 
-function mostrarPedidoSucesso(pedidoId, token, itens, total, whatsappUrl, entrega) {
+function mostrarPedidoSucesso(pedidoId, token, itens, total, whatsappUrl, entrega, fidelidade) {
   const combine = isDeliveryToCombine();
 
   const itensHtml = itens
@@ -927,6 +927,7 @@ function mostrarPedidoSucesso(pedidoId, token, itens, total, whatsappUrl, entreg
         <strong>${money(total)}</strong>
       </div>
       ${combine ? '<p class="success-note">' + escapeHtml(NOTE_SCP) + ".</p>" : ""}
+      ${fidelidade ? '<div class="loyalty loyalty--success">' + loyaltyHtml(fidelidade) + "</div>" : ""}
       <div class="success-actions">
         <button type="button" class="success-track" id="successTrack">Acompanhar pedido</button>
         <button type="button" class="success-whatsapp" id="successWhatsapp">Abrir WhatsApp novamente</button>
@@ -985,6 +986,186 @@ function mostrarPedidoSucesso(pedidoId, token, itens, total, whatsappUrl, entreg
 }
 
 // =========================================================
+// ANIVERSÁRIO + FIDELIDADE (MIMO)
+// =========================================================
+
+// A cada quantos pedidos ATENDIDOS (status "entregue") o cliente ganha um mimo.
+// Se mudar aqui, mude também em pedidos/pedidos.js.
+const PEDIDOS_PARA_MIMO = 10;
+
+function formatBirthday(isoDate) {
+  const parts = String(isoDate || "").split("-");
+  if (parts.length !== 3) return "";
+  return parts[2] + "/" + parts[1] + "/" + parts[0];
+}
+
+function setupBirthday() {
+  const input = document.getElementById("customerBirthday");
+  if (!input) return;
+
+  // Não deixa escolher data no futuro
+  const hoje = new Date();
+  const mes = String(hoje.getMonth() + 1).padStart(2, "0");
+  const dia = String(hoje.getDate()).padStart(2, "0");
+  input.max = hoje.getFullYear() + "-" + mes + "-" + dia;
+}
+
+// Salva nome + aniversário do cliente (chave = telefone)
+async function salvarCliente(name, phone, birthday) {
+  if (!supabaseClient) return;
+
+  try {
+    const result = await supabaseClient.rpc("registrar_cliente", {
+      p_telefone: phone,
+      p_nome: name,
+      p_data_nascimento: birthday || null
+    });
+
+    if (result.error) {
+      console.warn("Não foi possível salvar o cliente:", result.error);
+    }
+  } catch (error) {
+    console.warn("Não foi possível salvar o cliente:", error);
+  }
+}
+
+// Busca quantos pedidos o cliente já fez / foram atendidos
+async function consultarFidelidade(phone) {
+  if (!supabaseClient) return null;
+
+  try {
+    const result = await supabaseClient.rpc("consultar_fidelidade", {
+      p_telefone: phone
+    });
+
+    if (result.error || !result.data) {
+      if (result.error) console.warn("Fidelidade indisponível:", result.error);
+      return null;
+    }
+
+    return {
+      atendidos: Number(result.data.atendidos) || 0,
+      emAndamento: Number(result.data.em_andamento) || 0
+    };
+  } catch (error) {
+    console.warn("Fidelidade indisponível:", error);
+    return null;
+  }
+}
+
+// Calcula o progresso do ciclo atual (0 a PEDIDOS_PARA_MIMO)
+function loyaltyProgress(fidelidade) {
+  const atendidos = fidelidade.atendidos;
+  const ciclo = atendidos % PEDIDOS_PARA_MIMO;
+  const mimoDisponivel = atendidos > 0 && ciclo === 0;
+
+  return {
+    atendidos: atendidos,
+    emAndamento: fidelidade.emAndamento,
+    marcados: mimoDisponivel ? PEDIDOS_PARA_MIMO : ciclo,
+    faltam: mimoDisponivel ? 0 : PEDIDOS_PARA_MIMO - ciclo,
+    mimoDisponivel: mimoDisponivel,
+    mimosGanhos: Math.floor(atendidos / PEDIDOS_PARA_MIMO)
+  };
+}
+
+// Texto curto (usado na mensagem do WhatsApp)
+function loyaltyResumo(fidelidade) {
+  const p = loyaltyProgress(fidelidade);
+  let texto = p.atendidos + (p.atendidos === 1 ? " pedido atendido" : " pedidos atendidos");
+
+  if (p.emAndamento > 0) {
+    texto += " (+" + p.emAndamento + " em andamento)";
+  }
+
+  texto += p.mimoDisponivel
+    ? " — 🎉 MIMO DISPONÍVEL!"
+    : " — faltam " + p.faltam + " para o mimo";
+
+  return texto;
+}
+
+function loyaltyHtml(fidelidade) {
+  const p = loyaltyProgress(fidelidade);
+
+  let selos = "";
+  for (let i = 0; i < PEDIDOS_PARA_MIMO; i++) {
+    selos += '<span class="loyalty-stamp' + (i < p.marcados ? " is-filled" : "") + '"></span>';
+  }
+
+  let titulo;
+  let detalhe;
+
+  if (p.atendidos === 0) {
+    titulo = "🎁 Programa de mimos";
+    detalhe = "A cada " + PEDIDOS_PARA_MIMO + " pedidos atendidos você ganha um mimo. Seu primeiro pedido começa a contar a partir da entrega!";
+  } else if (p.mimoDisponivel) {
+    titulo = "🎉 Você ganhou um mimo!";
+    detalhe = "Você já tem " + p.atendidos + " pedidos atendidos. Avise a Gela Gourmet no seu próximo pedido para receber o seu mimo.";
+  } else {
+    titulo = "🎁 " + p.atendidos + (p.atendidos === 1 ? " pedido atendido" : " pedidos atendidos");
+    detalhe = "Faltam " + p.faltam + (p.faltam === 1 ? " pedido" : " pedidos") + " para ganhar um mimo.";
+  }
+
+  if (p.emAndamento > 0) {
+    detalhe += " (" + p.emAndamento + (p.emAndamento === 1 ? " pedido em andamento" : " pedidos em andamento") + ")";
+  }
+
+  return (
+    '<strong class="loyalty-title">' + titulo + "</strong>" +
+    '<div class="loyalty-stamps" role="img" aria-label="' + p.marcados + " de " + PEDIDOS_PARA_MIMO + ' selos">' + selos + "</div>" +
+    '<p class="loyalty-text">' + escapeHtml(detalhe) + "</p>"
+  );
+}
+
+function renderLoyalty(fidelidade) {
+  const box = document.getElementById("loyaltyBox");
+  if (!box) return;
+
+  if (!fidelidade) {
+    box.hidden = true;
+    box.innerHTML = "";
+    return;
+  }
+
+  box.innerHTML = loyaltyHtml(fidelidade);
+  box.hidden = false;
+}
+
+// Mostra o cartão de fidelidade assim que o telefone completo é digitado
+function setupLoyalty() {
+  const input = document.getElementById("customerPhone");
+  if (!input) return;
+
+  let timer = null;
+  let ultimoTelefone = "";
+
+  input.addEventListener("input", function () {
+    const digitos = input.value.replace(/\D/g, "");
+
+    clearTimeout(timer);
+
+    if (digitos.length < 10) {
+      ultimoTelefone = "";
+      renderLoyalty(null);
+      return;
+    }
+
+    if (digitos === ultimoTelefone) return;
+
+    timer = setTimeout(async function () {
+      ultimoTelefone = digitos;
+      const fidelidade = await consultarFidelidade(digitos);
+
+      // Ignora resposta antiga se o telefone mudou nesse meio tempo
+      if (input.value.replace(/\D/g, "") !== digitos) return;
+
+      renderLoyalty(fidelidade);
+    }, 500);
+  });
+}
+
+// =========================================================
 // MENSAGEM DO WHATSAPP
 // =========================================================
 
@@ -1013,8 +1194,12 @@ function buildWhatsappMessage(data) {
   message += "👤 *Cliente:* " + data.name + "\n";
   message += "📞 *Telefone:* " + data.phone + "\n";
 
-  if (data.email) {
-    message += "✉️ *E-mail:* " + data.email + "\n";
+  if (data.birthday) {
+    message += "🎂 *Aniversário:* " + formatBirthday(data.birthday) + "\n";
+  }
+
+  if (data.loyaltyText) {
+    message += "🎁 *Fidelidade:* " + data.loyaltyText + "\n";
   }
 
   message += "\n🍦 *Pedido:*\n";
@@ -1099,13 +1284,13 @@ async function createOrder() {
   try {
     const nameInput = document.getElementById("customerName");
     const phoneInput = document.getElementById("customerPhone");
-    const emailInput = document.getElementById("customerEmail");
+    const birthdayInput = document.getElementById("customerBirthday");
     const paymentInput = document.getElementById("paymentMethod");
     const noteInput = document.getElementById("customerNote");
 
     const name = nameInput.value.trim();
     const phone = phoneInput.value.trim();
-    const email = emailInput ? emailInput.value.trim() : "";
+    const birthday = birthdayInput ? birthdayInput.value : "";
     const payment = paymentInput.value;
     const note = noteInput ? noteInput.value.trim() : "";
 
@@ -1191,12 +1376,18 @@ async function createOrder() {
     pedidoAcompanhado = pedidoSalvo;
     statusAnteriorPedido = "pendente";
 
+    // Salva o cliente (aniversário) e consulta a fidelidade.
+    // Se algo falhar aqui, o pedido continua normalmente.
+    await salvarCliente(name, phone, birthday);
+    const fidelidade = await consultarFidelidade(phone);
+
     // WhatsApp
     const message = buildWhatsappMessage({
       pedidoId: pedidoId,
       name: name,
       phone: phone,
-      email: email,
+      birthday: birthday,
+      loyaltyText: fidelidade ? loyaltyResumo(fidelidade) : "",
       itens: itensPedido,
       subtotal: subtotal,
       total: total,
@@ -1232,8 +1423,8 @@ async function createOrder() {
     nameInput.value = "";
     phoneInput.value = "";
 
-    if (emailInput) {
-      emailInput.value = "";
+    if (birthdayInput) {
+      birthdayInput.value = "";
     }
 
     paymentInput.value = "";
@@ -1248,8 +1439,12 @@ async function createOrder() {
       itensPedido,
       total,
       whatsappUrl,
-      entrega
+      entrega,
+      fidelidade
     );
+
+    // Atualiza o cartão de fidelidade do formulário (o campo de telefone foi limpo)
+    renderLoyalty(null);
   } catch (error) {
     console.error("❌ ERRO COMPLETO:", error);
 
@@ -1442,6 +1637,8 @@ document.addEventListener("DOMContentLoaded", function () {
   setupOrderButton();
   setupOrderType();
   setupPhoneMask();
+  setupBirthday();
+  setupLoyalty();
   setupCity();
   setupCartBar();
   setupTrackButtons();

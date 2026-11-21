@@ -1943,3 +1943,231 @@ body.loja-fechada #sendOrder {
 }
 
 body.loja-fechada .card:not(.is-off) .card-photo { filter: grayscale(.35); }
+
+/* =========================================================
+   ANIVERSÁRIO + FIDELIDADE (MIMO)
+   ========================================================= */
+
+input[type="date"] {
+    width: 100%;
+    min-height: 50px;
+    padding: 12px 16px;
+    border: 1.5px solid var(--linha);
+    border-radius: var(--raio-s);
+    background: #fff;
+    color: var(--texto);
+    font: 400 1rem/1.4 var(--font-texto);
+    transition: border-color .2s, box-shadow .2s;
+}
+
+input[type="date"]:focus {
+    outline: none;
+    border-color: var(--chocolate);
+    box-shadow: 0 0 0 3px rgba(216, 95, 118, .15);
+}
+
+.field-hint {
+    display: block;
+    margin-top: 6px;
+    font-size: .82rem;
+    color: var(--texto-suave);
+}
+
+.loyalty {
+    margin: 16px 0 4px;
+    padding: 14px 16px;
+    background: var(--rose-suave);
+    border: 1.5px dashed var(--bronze-claro);
+    border-radius: var(--raio-m);
+    text-align: left;
+}
+
+.loyalty[hidden] {
+    display: none;
+}
+
+.loyalty-title {
+    display: block;
+    font-size: 1rem;
+    color: var(--texto);
+}
+
+.loyalty-stamps {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    margin: 10px 0 8px;
+}
+
+.loyalty-stamp {
+    width: 22px;
+    height: 22px;
+    border-radius: 50%;
+    border: 2px solid var(--bronze-claro);
+    background: #fff;
+    transition: background .3s var(--ease), transform .3s var(--ease);
+}
+
+.loyalty-stamp.is-filled {
+    background: var(--chocolate);
+    border-color: var(--chocolate-2);
+}
+
+.loyalty-text {
+    margin: 0;
+    font-size: .88rem;
+    line-height: 1.45;
+    color: var(--texto-suave);
+}
+
+.loyalty--success {
+    margin: 12px 0;
+}
+
+
+/* =========================================================
+   ADICIONAIS — visual refeito (opções tocáveis, ótimo no celular)
+   Mantém o mesmo HTML/JS: só o CSS mudou.
+   ========================================================= */
+
+.extras-box {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    margin: 12px 0 6px;
+    padding: 12px;
+    border: 1px solid var(--linha);
+    border-radius: 16px;
+    background: var(--rose-suave);
+}
+
+.extras-title {
+    margin: 0 0 2px;
+    font-size: .76rem;
+    font-weight: 700;
+    letter-spacing: .06em;
+    text-transform: uppercase;
+    color: var(--chocolate-2);
+}
+
+.extra-option {
+    position: relative;
+    display: grid;
+    grid-template-columns: 22px minmax(0, 1fr);
+    column-gap: 10px;
+    row-gap: 1px;
+    align-items: center;
+    min-height: 48px;
+    margin: 0;                      /* anula a margem global de "label" */
+    padding: 9px 12px;
+    background: #fff;
+    border: 1.5px solid var(--linha);
+    border-radius: 12px;
+    font-weight: 400;
+    cursor: pointer;
+    -webkit-tap-highlight-color: transparent;
+    transition: border-color .2s, box-shadow .2s, background .2s;
+}
+
+.extra-option input {
+    grid-column: 1;
+    grid-row: 1 / span 2;
+    -webkit-appearance: none;
+    appearance: none;
+    width: 22px;
+    height: 22px;
+    min-height: 0;
+    margin: 0;
+    padding: 0;
+    border: 2px solid var(--bronze-claro);
+    border-radius: 7px;
+    background: #fff;
+    cursor: pointer;
+    transition: background .2s, border-color .2s;
+}
+
+.extra-option input:checked {
+    border-color: var(--chocolate-2);
+    background: var(--chocolate) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Cpath d='M3.5 8.5l3 3 6-7' fill='none' stroke='white' stroke-width='2.2' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E") center / 14px no-repeat;
+}
+
+.extra-option input:focus-visible {
+    outline: 3px solid rgba(216, 95, 118, .35);
+    outline-offset: 2px;
+}
+
+.extra-option span {
+    grid-column: 2;
+    grid-row: 1;
+    min-width: 0;
+    font-size: .92rem;
+    font-weight: 600;
+    line-height: 1.2;
+    color: var(--texto);
+    overflow-wrap: anywhere;
+}
+
+.extra-option strong {
+    grid-column: 2;
+    grid-row: 2;
+    font-size: .8rem;
+    font-weight: 500;
+    color: var(--texto-suave);
+}
+
+.extra-option:has(input:checked) {
+    border-color: var(--chocolate);
+    box-shadow: 0 0 0 3px rgba(216, 95, 118, .14);
+}
+
+.extra-option:has(input:checked) strong {
+    font-weight: 700;
+    color: var(--chocolate-2);
+}
+
+.extras-box > small {
+    margin: 2px 0 0;
+    font-size: .76rem;
+    line-height: 1.35;
+    color: var(--texto-suave);
+}
+
+@media (max-width: 720px) {
+    .extras-box {
+        gap: 6px;
+        margin: 4px 0 2px;
+        padding: 9px;
+        border-radius: 13px;
+    }
+
+    .extras-title {
+        font-size: .68rem;
+    }
+
+    .extra-option {
+        grid-template-columns: 20px minmax(0, 1fr);
+        column-gap: 8px;
+        min-height: 46px;            /* área de toque confortável */
+        padding: 7px 8px;
+        border-radius: 10px;
+    }
+
+    .extra-option input {
+        width: 20px;
+        height: 20px;
+        border-radius: 6px;
+    }
+
+    .extra-option span {
+        font-size: .8rem;
+    }
+
+    .extra-option strong {
+        font-size: .72rem;
+    }
+
+    /* economiza espaço no card pequeno */
+    .extras-box > small {
+        display: none;
+    }
+}

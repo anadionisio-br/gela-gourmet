@@ -756,6 +756,11 @@ function preencherModal(
         "-";
 
 
+    preencherFidelidade(
+        pedido
+    );
+
+
     document.getElementById(
         "detalheEndereco"
     ).textContent =
@@ -815,6 +820,180 @@ function preencherModal(
         renderizarItens(
             pedido.itens
         );
+
+}
+
+
+// ======================================================
+// ANIVERSÁRIO + FIDELIDADE (MIMO)
+// ======================================================
+
+// A cada quantos pedidos ENTREGUES o cliente ganha um mimo.
+// Se mudar aqui, mude também em script.js.
+const PEDIDOS_PARA_MIMO = 10;
+
+
+function somenteDigitos(
+    valor
+) {
+
+    return String(
+        valor || ""
+    ).replace(
+        /\D/g,
+        ""
+    );
+
+}
+
+
+function formatarDataNascimento(
+    iso
+) {
+
+    const partes =
+        String(iso || "")
+            .split("-");
+
+    if (partes.length !== 3) {
+        return "Não informado";
+    }
+
+    return `${partes[2]}/${partes[1]}/${partes[0]}`;
+
+}
+
+
+async function preencherFidelidade(
+    pedido
+) {
+
+    const campoAniversario =
+        document.getElementById(
+            "detalheAniversario"
+        );
+
+    const campoFidelidade =
+        document.getElementById(
+            "detalheFidelidade"
+        );
+
+    if (
+        !campoAniversario ||
+        !campoFidelidade
+    ) {
+        return;
+    }
+
+    const telefone =
+        somenteDigitos(
+            pedido.cliente_telefone
+        );
+
+    campoAniversario.textContent =
+        "Carregando...";
+
+    campoFidelidade.textContent =
+        "Carregando...";
+
+    if (telefone.length < 10) {
+
+        campoAniversario.textContent =
+            "Não informado";
+
+        campoFidelidade.textContent =
+            "-";
+
+        return;
+
+    }
+
+
+    // Fidelidade: calculada com os pedidos já carregados na tela
+    const doCliente =
+        todosPedidos.filter(
+            item =>
+                somenteDigitos(
+                    item.cliente_telefone
+                ) === telefone
+        );
+
+    const atendidos =
+        doCliente.filter(
+            item =>
+                item.status ===
+                "entregue"
+        ).length;
+
+    const ciclo =
+        atendidos %
+        PEDIDOS_PARA_MIMO;
+
+    const mimoDisponivel =
+        atendidos > 0 &&
+        ciclo === 0;
+
+    campoFidelidade.textContent =
+        mimoDisponivel
+            ? `${atendidos} atendidos — 🎉 MIMO DISPONÍVEL`
+            : `${atendidos} atendidos — faltam ${PEDIDOS_PARA_MIMO - ciclo} para o mimo`;
+
+
+    // Aniversário: vem da tabela "clientes"
+    try {
+
+        const { data, error } =
+            await supabaseClient
+                .from("clientes")
+                .select(
+                    "data_nascimento"
+                )
+                .eq(
+                    "telefone",
+                    telefone
+                )
+                .maybeSingle();
+
+        // Ignora resposta antiga se outro pedido foi aberto
+        if (
+            !pedidoSelecionado ||
+            Number(pedidoSelecionado.id) !==
+            Number(pedido.id)
+        ) {
+            return;
+        }
+
+        if (error) {
+
+            console.warn(
+                error
+            );
+
+            campoAniversario.textContent =
+                "-";
+
+            return;
+
+        }
+
+        campoAniversario.textContent =
+            data &&
+            data.data_nascimento
+                ? formatarDataNascimento(
+                    data.data_nascimento
+                )
+                : "Não informado";
+
+    } catch (erro) {
+
+        console.warn(
+            erro
+        );
+
+        campoAniversario.textContent =
+            "-";
+
+    }
 
 }
 
