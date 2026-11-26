@@ -1527,12 +1527,398 @@ async function atualizarSilenciosamente() {
 
 
 // ======================================================
+// SOM DE NOVO PEDIDO
+// ======================================================
+
+let idsConhecidos = null;
+
+let somLigado = true;
+
+let somBloqueado = false;
+
+let audioCtx = null;
+
+let botaoSom = null;
+
+
+try {
+
+    somLigado =
+        localStorage.getItem(
+            "gelaSomPedidos"
+        ) !== "0";
+
+} catch (erro) {
+
+    somLigado = true;
+
+}
+
+
+function obterAudio() {
+
+    const Contexto =
+        window.AudioContext ||
+        window.webkitAudioContext;
+
+    if (!Contexto) {
+        return null;
+    }
+
+    if (!audioCtx) {
+
+        audioCtx =
+            new Contexto();
+
+    }
+
+    return audioCtx;
+
+}
+
+
+// O navegador só libera o som depois de um clique na página
+async function liberarAudio() {
+
+    const ctx =
+        obterAudio();
+
+    if (!ctx) {
+        return false;
+    }
+
+    try {
+
+        if (ctx.state !== "running") {
+
+            await ctx.resume();
+
+        }
+
+    } catch (erro) {
+
+        console.warn(
+            erro
+        );
+
+    }
+
+    somBloqueado =
+        ctx.state !== "running";
+
+    atualizarBotaoSom();
+
+    return !somBloqueado;
+
+}
+
+
+async function tocarSom() {
+
+    const liberado =
+        await liberarAudio();
+
+    if (!liberado) {
+        return;
+    }
+
+    const ctx =
+        audioCtx;
+
+    const inicio =
+        ctx.currentTime;
+
+    // 3 "dim-dom" seguidos para dar para ouvir de longe
+    for (let i = 0; i < 3; i++) {
+
+        [880, 1175].forEach(
+            function (frequencia, j) {
+
+                const t =
+                    inicio +
+                    i * 0.9 +
+                    j * 0.22;
+
+                const osc =
+                    ctx.createOscillator();
+
+                const ganho =
+                    ctx.createGain();
+
+                osc.type =
+                    "sine";
+
+                osc.frequency.value =
+                    frequencia;
+
+                ganho.gain.setValueAtTime(
+                    0.0001,
+                    t
+                );
+
+                ganho.gain.exponentialRampToValueAtTime(
+                    0.6,
+                    t + 0.02
+                );
+
+                ganho.gain.exponentialRampToValueAtTime(
+                    0.0001,
+                    t + 0.5
+                );
+
+                osc.connect(
+                    ganho
+                );
+
+                ganho.connect(
+                    ctx.destination
+                );
+
+                osc.start(
+                    t
+                );
+
+                osc.stop(
+                    t + 0.55
+                );
+
+            }
+        );
+
+    }
+
+}
+
+
+// Toca quando aparece um pedido que não estava na lista antes
+function avisarNovosPedidos() {
+
+    if (idsConhecidos === null) {
+
+        // primeira carga: só memoriza, não toca
+        idsConhecidos =
+            new Set(
+                todosPedidos.map(
+                    item =>
+                        String(item.id)
+                )
+            );
+
+        return;
+
+    }
+
+
+    const novos =
+        todosPedidos.filter(
+            item =>
+                !idsConhecidos.has(
+                    String(item.id)
+                ) &&
+                item.status !== "cancelado"
+        );
+
+
+    todosPedidos.forEach(
+        item =>
+            idsConhecidos.add(
+                String(item.id)
+            )
+    );
+
+
+    if (
+        novos.length > 0 &&
+        somLigado
+    ) {
+
+        tocarSom();
+
+    }
+
+}
+
+
+function atualizarBotaoSom() {
+
+    if (!botaoSom) {
+        return;
+    }
+
+    const principal =
+        botaoSom.querySelector(
+            ".som-principal"
+        );
+
+    botaoSom.classList.toggle(
+        "alerta",
+        somLigado && somBloqueado
+    );
+
+    if (!somLigado) {
+
+        principal.textContent =
+            "🔕 Som desligado";
+
+    } else if (somBloqueado) {
+
+        principal.textContent =
+            "🔔 Clique para ativar o som";
+
+    } else {
+
+        principal.textContent =
+            "🔔 Som ligado";
+
+    }
+
+}
+
+
+function criarBotaoSom() {
+
+    const estilo =
+        document.createElement(
+            "style"
+        );
+
+    estilo.textContent =
+        "#somPedidos{position:fixed;bottom:16px;right:322px;z-index:9998;" +
+        "display:flex;gap:4px;background:#fff;border:1px solid #f0d9df;" +
+        "border-radius:999px;padding:4px;box-shadow:0 6px 18px rgba(97,55,31,.15);" +
+        "font:600 13px system-ui,sans-serif}" +
+        "#somPedidos button{border:0;border-radius:999px;padding:8px 12px;" +
+        "cursor:pointer;background:#f2ecee;color:#66575d;font:inherit}" +
+        "#somPedidos.alerta .som-principal{background:#fff4d6;color:#8a5a00}" +
+        "@media(max-width:700px){#somPedidos{right:16px;bottom:84px}}";
+
+    document.head.appendChild(
+        estilo
+    );
+
+    botaoSom =
+        document.createElement(
+            "div"
+        );
+
+    botaoSom.id =
+        "somPedidos";
+
+    botaoSom.innerHTML =
+        "<button type=\"button\" class=\"som-principal\"></button>" +
+        "<button type=\"button\" class=\"som-teste\" title=\"Ouvir o som\">▶</button>";
+
+    document.body.appendChild(
+        botaoSom
+    );
+
+    botaoSom
+        .querySelector(".som-principal")
+        .addEventListener(
+            "click",
+            async function () {
+
+                if (
+                    somLigado &&
+                    somBloqueado
+                ) {
+
+                    // primeiro clique: libera o áudio
+                    await tocarSom();
+
+                    return;
+
+                }
+
+                somLigado =
+                    !somLigado;
+
+                try {
+
+                    localStorage.setItem(
+                        "gelaSomPedidos",
+                        somLigado
+                            ? "1"
+                            : "0"
+                    );
+
+                } catch (erro) { /* ignora */ }
+
+                atualizarBotaoSom();
+
+                if (somLigado) {
+
+                    tocarSom();
+
+                }
+
+            }
+        );
+
+    botaoSom
+        .querySelector(".som-teste")
+        .addEventListener(
+            "click",
+            tocarSom
+        );
+
+    // Qualquer clique na página já libera o som
+    document.addEventListener(
+        "click",
+        function liberar() {
+
+            liberarAudio().then(
+                function (ok) {
+
+                    if (ok) {
+
+                        document.removeEventListener(
+                            "click",
+                            liberar
+                        );
+
+                    }
+
+                }
+            );
+
+        }
+    );
+
+    // Começa como "bloqueado" até o navegador liberar o áudio
+    somBloqueado = true;
+
+    atualizarBotaoSom();
+
+}
+
+
+if (
+    document.readyState ===
+    "loading"
+) {
+
+    document.addEventListener(
+        "DOMContentLoaded",
+        criarBotaoSom
+    );
+
+} else {
+
+    criarBotaoSom();
+
+}
+
+
+// ======================================================
 // IMPRESSORA
 // ======================================================
 
 // Avisa o módulo da impressora que a lista de pedidos foi atualizada
 // (ele imprime sozinho os pedidos novos)
 function avisarImpressora() {
+
+    avisarNovosPedidos();
 
     if (window.Impressora) {
 
