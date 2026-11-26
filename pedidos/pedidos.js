@@ -214,6 +214,8 @@ async function carregarPedidos() {
 
         filtrarPedidos();
 
+        avisarImpressora();
+
     } catch (erro) {
 
         console.error(
@@ -1511,6 +1513,8 @@ async function atualizarSilenciosamente() {
 
         mostrarIndicadorAtualizado();
 
+        avisarImpressora();
+
     } catch (erro) {
 
         console.error(
@@ -1518,6 +1522,49 @@ async function atualizarSilenciosamente() {
         );
 
     }
+
+}
+
+
+// ======================================================
+// IMPRESSORA
+// ======================================================
+
+// Avisa o módulo da impressora que a lista de pedidos foi atualizada
+// (ele imprime sozinho os pedidos novos)
+function avisarImpressora() {
+
+    if (window.Impressora) {
+
+        window.Impressora.verificarNovos(
+            todosPedidos
+        );
+
+    }
+
+}
+
+
+// Botão "Imprimir" do pedido aberto
+async function imprimirPedidoAtual() {
+
+    if (!pedidoSelecionado) {
+        return;
+    }
+
+    if (!window.Impressora) {
+
+        alert(
+            "O módulo da impressora não foi carregado."
+        );
+
+        return;
+
+    }
+
+    await window.Impressora.imprimirPedido(
+        pedidoSelecionado
+    );
 
 }
 
