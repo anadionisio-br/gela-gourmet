@@ -1,3 +1,4 @@
+
 // =========================================================
 // GELA GOURMET - SCRIPT PRINCIPAL
 // Catálogo (Supabase), carrinho, entrega, checkout e WhatsApp.
@@ -112,6 +113,15 @@ let products = [];
 let cart = [];
 let adicionais = [];
 let adicionaisSelecionados = {};
+let categoriaAtiva = "todos";
+
+const CATEGORIAS_FALLBACK = [
+  { slug: "geladinho", nome: "Geladinhos Gourmet", icone: "🍦", ordem: 1, ativa: true },
+  { slug: "fondue", nome: "Fondue", icone: "🍫", ordem: 2, ativa: true },
+  { slug: "picole", nome: "Picolé Gourmet", icone: "🍭", ordem: 3, ativa: true }
+];
+
+let categorias = [...CATEGORIAS_FALLBACK];
 
 // Acompanhamento do pedido
 let pedidoAcompanhado = null;
@@ -242,8 +252,16 @@ function fallbackImageFor(name) {
   return "";
 }
 
-function describeProduct(name) {
+function describeProduct(name, category) {
   const n = normalizeText(name);
+  const cat = normalizeText(category || "");
+
+  if (cat.includes("fondue")) {
+    return "Fondue cremoso acompanhado de frutas frescas e complementos.";
+  }
+  if (cat.includes("picole")) {
+    return "Picolé gourmet artesanal, super cremoso e recheado.";
+  }
 
   if (n.includes("ninho") && n.includes("nutella")) {
     return "Base cremosa de leite Ninho com camadas de Nutella.";
@@ -268,6 +286,10 @@ function describeProduct(name) {
   }
   if (n.includes("chocolate")) {
     return "Chocolate cremoso e bem gelado.";
+  }
+
+  if (cat && cat !== "geladinho") {
+    return "Preparado artesanalmente com ingredientes selecionados.";
   }
 
   return "Geladinho gourmet cremoso e bem gelado.";
@@ -348,9 +370,22 @@ async function loadProducts() {
   }
 
   try {
+    // Carrega categorias dinâmicas do Supabase (se a tabela já existir)
+    const catResult = await supabaseClient
+      .from("categorias")
+      .select("id, slug, nome, icone, ordem, ativa")
+      .order("ordem", { ascending: true })
+      .order("id", { ascending: true });
+
+    if (!catResult.error && Array.isArray(catResult.data) && catResult.data.length > 0) {
+      categorias = catResult.data.filter(function (c) { return c.ativa !== false; });
+    } else {
+      categorias = [...CATEGORIAS_FALLBACK];
+    }
+
     const { data, error } = await supabaseClient
       .from("produtos")
-      .select("id, nome, preco, imagem, disponivel, estoque_quantidade")
+      .select("id, nome, preco, imagem, disponivel, estoque_quantidade, categoria")
       .order("id", { ascending: true });
 
     if (error) {
@@ -375,10 +410,17 @@ async function loadProducts() {
       return;
     }
 
-    const adicionaisResult = await supabaseClient
+    let adicionaisResult = await supabaseClient
       .from("adicionais")
-      .select("id, nome, preco, disponivel")
+      .select("id, nome, preco, disponivel, categoria")
       .order("id", { ascending: true });
+
+    if (adicionaisResult.error) {
+      adicionaisResult = await supabaseClient
+        .from("adicionais")
+        .select("id, nome, preco, disponivel")
+        .order("id", { ascending: true });
+    }
 
     if (adicionaisResult.error) {
       console.error("Erro ao carregar adicionais:", adicionaisResult.error);
@@ -387,7 +429,13 @@ async function loadProducts() {
       adicionais = (adicionaisResult.data || [])
         .filter(function (item) { return item.disponivel !== false; })
         .map(function (item) {
-          return { id: item.id, name: item.nome, price: Number(item.preco), disponivel: item.disponivel !== false };
+          return {
+            id: item.id,
+            name: item.nome,
+            price: Number(item.preco),
+            disponivel: item.disponivel !== false,
+            categoria: item.categoria || "geladinho"
+          };
         });
     }
 
@@ -397,6 +445,7 @@ async function loadProducts() {
         name: product.nome,
         price: Number(product.preco),
         img: product.imagem,
+        categoria: product.categoria || "geladinho",
         disponivel: product.disponivel !== false && (product.estoque_quantidade === null || product.estoque_quantidade === undefined || Number(product.estoque_quantidade) > 0),
         estoqueQuantidade: product.estoque_quantidade === null || product.estoque_quantidade === undefined ? null : Number(product.estoque_quantidade)
       };
@@ -422,96 +471,193 @@ async function loadProducts() {
 // VITRINE
 // =========================================================
 
+function renderCategoryTabs() {
+  const tabsContainer = document.getElementById("categoryTabs");
+  if (!tabsContainer) return;
+
+  const slugsValidos = new Set(categorias.map(function (c) { return c.slug; }));
+  if (categoriaAtiva !== "todos" && !slugsValidos.has(categoriaAtiva)) {
+    categoriaAtiva = "todos";
+  }
+
+  const botoes = [
+    `<button type="button" class="cat-tab ${categoriaAtiva === "todos" ? "active" : ""}" data-category="todos" onclick="filtrarCategoria('todos')">Todos</button>`
+  ];
+
+  categorias.forEach(function (cat) {
+    const temProdutos = products.some(function (p) { return (p.categoria || "geladinho") === cat.slug; });
+    if (!temProdutos) return;
+    const ativa = categoriaAtiva === cat.slug ? "active" : "";
+    botoes.push(
+      `<button type="button" class="cat-tab ${ativa}" data-category="${escapeHtml(cat.slug)}" onclick="filtrarCategoria('${escapeHtml(cat.slug)}')">${escapeHtml(cat.icone || "🍨")} ${escapeHtml(cat.nome)}</button>`
+    );
+  });
+
+  tabsContainer.innerHTML = botoes.join("");
+}
+
+function filtrarCategoria(categoria) {
+  categoriaAtiva = categoria || "todos";
+  renderCategoryTabs();
+  renderProducts();
+}
+
+function adicionaisDisponiveisParaCategoria(categoria) {
+  return adicionais.filter(function (extra) {
+    return !extra.categoria || extra.categoria === "todos" || extra.categoria === categoria;
+  });
+}
+
+function criarCardProduto(product, index, ordemVisual) {
+  const card = document.createElement("article");
+
+  card.className = "card reveal";
+  card.dataset.index = index;
+  card.style.setProperty("--d", (ordemVisual % 3) * 90 + "ms");
+
+  if (!product.disponivel) {
+    card.classList.add("is-off");
+  }
+  if ((cart[index] || 0) > 0) {
+    card.classList.add("in-cart");
+  }
+
+  const media = document.createElement("div");
+  media.className = "card-media";
+
+  media.appendChild(
+    buildImage(resolveImage(product.img), product.name, "card-photo")
+  );
+
+  if (!product.disponivel) {
+    const badge = document.createElement("span");
+    badge.className = "badge-off";
+    badge.textContent = "Esgotado";
+    media.appendChild(badge);
+  }
+
+  card.appendChild(media);
+
+  const body = document.createElement("div");
+  body.className = "card-body";
+
+  let action = "";
+
+  if (product.disponivel) {
+    action = `
+      <button type="button" class="add-btn"
+        onclick="changeQuantity(${index}, 1)"
+        aria-label="Adicionar ${escapeHtml(product.name)} ao pedido">
+        Adicionar
+      </button>
+
+      <div class="qty" role="group"
+        aria-label="Quantidade de ${escapeHtml(product.name)}">
+        <button type="button" onclick="changeQuantity(${index}, -1)"
+          aria-label="Diminuir quantidade">−</button>
+        <span id="quantity-${index}" aria-live="polite">${cart[index] || 0}</span>
+        <button type="button" onclick="changeQuantity(${index}, 1)"
+          aria-label="Aumentar quantidade">+</button>
+      </div>
+    `;
+  }
+
+  const extrasCategoria = adicionaisDisponiveisParaCategoria(product.categoria);
+
+  body.innerHTML = `
+    <h3>${escapeHtml(product.name)}</h3>
+    <p class="card-desc">${escapeHtml(describeProduct(product.name, product.categoria))}</p>
+    ${extrasCategoria.length && product.disponivel ? `
+      <div class="extras-box">
+        <p class="extras-title">Adicionais</p>
+        ${extrasCategoria.map(function (extra) {
+          const checked = (adicionaisSelecionados[index] || []).includes(extra.id) ? "checked" : "";
+          return `<label class="extra-option">
+            <input type="checkbox" ${checked} onchange="alternarAdicional(${index}, ${extra.id}, this.checked)">
+            <span>${escapeHtml(extra.name)}</span>
+            <strong>+ ${money(extra.price)}</strong>
+          </label>`;
+        }).join("")}
+        <small>Selecione os adicionais para este item.</small>
+      </div>` : ""}
+    <div class="card-foot">
+      <strong class="price">${money(product.price + precoAdicionais(index))}</strong>
+      ${action}
+    </div>
+    ${
+      product.disponivel
+        ? ""
+        : '<div class="indisponivel">Esgotado no momento. Os outros itens seguem disponíveis.</div>'
+    }
+  `;
+
+  card.appendChild(body);
+  return card;
+}
+
 function renderProducts() {
   if (!productsContainer) return;
 
+  renderCategoryTabs();
   productsContainer.innerHTML = "";
 
-  products.forEach(function (product, index) {
-    const card = document.createElement("article");
+  // Monta lista ordenada das categorias configuradas + eventuais categorias órfãs nos produtos
+  const conhecidas = new Set(categorias.map(function (c) { return c.slug; }));
+  const listaCategorias = [...categorias];
 
-    card.className = "card reveal";
-    card.dataset.index = index;
-    card.style.setProperty("--d", (index % 3) * 90 + "ms");
-
-    if (!product.disponivel) {
-      card.classList.add("is-off");
-    }
-
-    const media = document.createElement("div");
-    media.className = "card-media";
-
-    media.appendChild(
-      buildImage(resolveImage(product.img), product.name, "card-photo")
-    );
-
-    if (!product.disponivel) {
-      const badge = document.createElement("span");
-      badge.className = "badge-off";
-      badge.textContent = "Esgotado";
-      media.appendChild(badge);
-    }
-
-    card.appendChild(media);
-
-    const body = document.createElement("div");
-    body.className = "card-body";
-
-    let action = "";
-
-    if (product.disponivel) {
-      action = `
-        <button type="button" class="add-btn"
-          onclick="changeQuantity(${index}, 1)"
-          aria-label="Adicionar ${escapeHtml(product.name)} ao pedido">
-          Adicionar
-        </button>
-
-        <div class="qty" role="group"
-          aria-label="Quantidade de ${escapeHtml(product.name)}">
-          <button type="button" onclick="changeQuantity(${index}, -1)"
-            aria-label="Diminuir quantidade">−</button>
-          <span id="quantity-${index}" aria-live="polite">${cart[index] || 0}</span>
-          <button type="button" onclick="changeQuantity(${index}, 1)"
-            aria-label="Aumentar quantidade">+</button>
-        </div>
-      `;
-    }
-
-    body.innerHTML = `
-      <h3>${escapeHtml(product.name)}</h3>
-      <p class="card-desc">${escapeHtml(describeProduct(product.name))}</p>
-      ${adicionais.length && product.disponivel ? `
-        <div class="extras-box">
-          <p class="extras-title">Adicionais</p>
-          ${adicionais.map(function (extra) {
-            const checked = (adicionaisSelecionados[index] || []).includes(extra.id) ? "checked" : "";
-            return `<label class="extra-option">
-              <input type="checkbox" ${checked} onchange="alternarAdicional(${index}, ${extra.id}, this.checked)">
-              <span>${escapeHtml(extra.name)}</span>
-              <strong>+ ${money(extra.price)}</strong>
-            </label>`;
-          }).join("")}
-          <small>Selecione os adicionais para este sabor.</small>
-        </div>` : ""}
-      <div class="card-foot">
-        <strong class="price">${money(product.price + precoAdicionais(index))}</strong>
-        ${action}
-      </div>
-      ${
-        product.disponivel
-          ? ""
-          : '<div class="indisponivel">Esgotado no momento. Os outros sabores seguem disponíveis.</div>'
-      }
-    `;
-
-    card.appendChild(body);
-    productsContainer.appendChild(card);
-
-    if (window.observeReveal) {
-      window.observeReveal(card);
+  products.forEach(function (p) {
+    const slug = p.categoria || "geladinho";
+    if (!conhecidas.has(slug)) {
+      conhecidas.add(slug);
+      listaCategorias.push({ slug: slug, nome: slug, icone: "🍨" });
     }
   });
+
+  const categoriasParaMostrar = categoriaAtiva === "todos"
+    ? listaCategorias
+    : listaCategorias.filter(function (c) { return c.slug === categoriaAtiva; });
+
+  let totalRenderizados = 0;
+
+  categoriasParaMostrar.forEach(function (cat) {
+    const itensCategoria = products
+      .map(function (product, index) { return { product: product, index: index }; })
+      .filter(function (item) { return (item.product.categoria || "geladinho") === cat.slug; });
+
+    if (itensCategoria.length === 0) return;
+
+    const bloco = document.createElement("div");
+    bloco.className = "category-section";
+
+    const titulo = document.createElement("h3");
+    titulo.className = "category-heading";
+    titulo.innerHTML = `<span>${escapeHtml(cat.icone || "🍨")}</span> ${escapeHtml(cat.nome)}`;
+    bloco.appendChild(titulo);
+
+    const grid = document.createElement("div");
+    grid.className = "cards";
+
+    itensCategoria.forEach(function (item, idxVisual) {
+      const card = criarCardProduto(item.product, item.index, idxVisual);
+      grid.appendChild(card);
+      totalRenderizados++;
+      if (window.observeReveal) {
+        window.observeReveal(card);
+      }
+    });
+
+    bloco.appendChild(grid);
+    productsContainer.appendChild(bloco);
+  });
+
+  if (totalRenderizados === 0) {
+    productsContainer.innerHTML = `
+      <div class="cards-msg">
+        <h3>Nenhum item nesta categoria ainda</h3>
+        <p>Em breve teremos novidades por aqui!</p>
+      </div>
+    `;
+  }
 }
 
 function precoAdicionais(index) {
@@ -768,7 +914,7 @@ function updateTotal() {
   const totalNote = document.getElementById("totalNote");
 
   if (totalLabel) {
-    totalLabel.textContent = combine ? "Total dos geladinhos" : "Total";
+    totalLabel.textContent = combine ? "Total dos produtos" : "Total";
   }
 
   if (totalNote) {
@@ -929,7 +1075,7 @@ function mostrarPedidoSucesso(pedidoId, token, itens, total, whatsappUrl, entreg
         <strong>${escapeHtml(entrega ? entrega.texto : "")}</strong>
       </div>
       <div class="success-total">
-        <span>${combine ? "Total dos geladinhos" : "Total"}</span>
+        <span>${combine ? "Total dos produtos" : "Total"}</span>
         <strong>${money(total)}</strong>
       </div>
       ${combine ? '<p class="success-note">' + escapeHtml(NOTE_SCP) + ".</p>" : ""}
@@ -1227,7 +1373,7 @@ function buildWhatsappMessage(data) {
     if (data.combinar) {
       // Santa Cruz das Palmeiras: nenhum valor numérico de entrega
       message += "🚚 *Entrega:* " + TEXT_DELIVERY_TO_COMBINE + "\n";
-      message += "💰 *Total dos geladinhos:* " + money(data.total) + "\n\n";
+      message += "💰 *Total dos produtos:* " + money(data.total) + "\n\n";
     } else {
       message += "🚚 *Entrega:* " + money(DELIVERY_FEE) + "\n";
       message += "💰 *Total:* " + money(data.total) + "\n\n";

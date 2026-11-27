@@ -2,7 +2,7 @@
 <html lang="pt-BR">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
   <title>Gela Gourmet | Geladinhos Gourmet</title>
   <meta name="description" content="Geladinhos gourmet cremosos e recheados. Escolha seus sabores e faça seu pedido pelo WhatsApp.">
   <meta name="theme-color" content="#fffaf6">
@@ -12,10 +12,58 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;700&family=Great+Vibes&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="style.css">
+  <link rel="stylesheet" href="responsivo.css">
   <script>document.documentElement.classList.add("js");</script>
+
+  <!-- Tela de carregamento (CSS inline para aparecer imediatamente) -->
+  <style>
+    #loader{position:fixed;inset:0;z-index:9999;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:18px;background:#fffaf6;transition:opacity .5s ease,visibility .5s ease}
+    #loader.done{opacity:0;visibility:hidden;pointer-events:none}
+    html.loading,html.loading body{overflow:hidden}
+    .ld-pop{width:92px;height:150px;animation:ldBounce 1.3s ease-in-out infinite;transform-origin:50% 100%}
+    .ld-shadow{width:70px;height:9px;border-radius:50%;background:rgba(184,79,104,.18);animation:ldShadow 1.3s ease-in-out infinite;margin-top:-10px}
+    .ld-drip{animation:ldDrip 1.3s ease-in infinite}
+    .ld-drip.d2{animation-delay:.45s}
+    .ld-text{font-family:"DM Sans",Arial,sans-serif;color:#826d65;font-size:.95rem;letter-spacing:.01em;margin:0}
+    .ld-brand{font-family:"Great Vibes",cursive;color:#a3445b;font-size:2.1rem;line-height:1;margin:0}
+    .ld-dots span{display:inline-block;animation:ldDot 1.2s infinite}
+    .ld-dots span:nth-child(2){animation-delay:.15s}.ld-dots span:nth-child(3){animation-delay:.3s}
+    @keyframes ldBounce{0%,100%{transform:translateY(0) rotate(-5deg)}50%{transform:translateY(-16px) rotate(5deg)}}
+    @keyframes ldShadow{0%,100%{transform:scale(1);opacity:1}50%{transform:scale(.7);opacity:.5}}
+    @keyframes ldDrip{0%{transform:translateY(-4px);opacity:0}25%{opacity:1}100%{transform:translateY(16px);opacity:0}}
+    @keyframes ldDot{0%,60%,100%{opacity:.25}30%{opacity:1}}
+    @media (prefers-reduced-motion:reduce){.ld-pop,.ld-shadow,.ld-drip,.ld-dots span{animation:none}}
+  </style>
 </head>
 
 <body>
+  <!-- LOADER: geladinho pulando -->
+  <div id="loader" role="status" aria-live="polite" aria-label="Carregando">
+    <p class="ld-brand">Gela Gourmet</p>
+    <svg class="ld-pop" viewBox="0 0 92 150" aria-hidden="true">
+      <!-- palito -->
+      <rect x="39" y="96" width="14" height="50" rx="7" fill="#e8c9a0"/>
+      <!-- corpo -->
+      <path d="M12 40a34 34 0 0 1 68 0v56a10 10 0 0 1-10 10H22a10 10 0 0 1-10-10z" fill="#f4a3b5"/>
+      <!-- cobertura de chocolate -->
+      <path d="M12 40a34 34 0 0 1 68 0v16c-5 0-6 8-12 8s-7-10-12-10-7 12-12 12-7-10-12-10-7 8-12 8-8-6-8-8z" fill="#7a4326"/>
+      <!-- granulado -->
+      <g stroke-linecap="round" stroke-width="3.5">
+        <path d="M30 22l5 3" stroke="#fff"/><path d="M50 16l-2 6" stroke="#ffd36b"/>
+        <path d="M62 28l5-2" stroke="#fff"/><path d="M38 38l5 1" stroke="#ffd36b"/>
+        <path d="M56 42l4 3" stroke="#fff"/><path d="M24 46l4-2" stroke="#ffd36b"/>
+      </g>
+      <!-- brilho -->
+      <path d="M22 70v22" stroke="#fff" stroke-opacity=".55" stroke-width="5" stroke-linecap="round"/>
+      <!-- pingos -->
+      <circle class="ld-drip" cx="32" cy="70" r="3.2" fill="#7a4326"/>
+      <circle class="ld-drip d2" cx="58" cy="70" r="3.2" fill="#7a4326"/>
+    </svg>
+    <div class="ld-shadow"></div>
+    <p class="ld-text">Preparando seu cardápio<span class="ld-dots"><span>.</span><span>.</span><span>.</span></span></p>
+  </div>
+  <script>document.documentElement.classList.add("loading");</script>
+
   <a class="skip" href="#cardapio">Ir para o cardápio</a>
 
   <header class="topo" id="topo">
@@ -28,15 +76,13 @@
       <nav class="links" aria-label="Navegação principal">
         <a href="#inicio">Início</a>
         <a href="#cardapio">Cardápio</a>
-        <a href="#como-pedir">Como pedir</a>
-        <a href="#entregas">Entregas</a>
-        <a href="#duvidas">Dúvidas</a>
+        <a href="#pedido">Meu pedido</a>
       </nav>
 
       <div class="nav-actions">
-        <a href="#" id="btnAcompanharPedido" class="btn-acompanhar-pedido">Acompanhar pedido</a>
+        <a href="#" id="btnAcompanharPedido" class="btn-acompanhar-pedido">Acompanhar<span class="hide-sm"> pedido</span></a>
         <a class="btn small" href="#pedido" id="navCart">
-          Meu pedido <span class="cart-badge" id="cartBadge">0</span>
+          Pedido <span class="cart-badge" id="cartBadge">0</span>
         </a>
       </div>
     </div>
@@ -47,19 +93,16 @@
   <main>
     <section id="inicio" class="hero">
       <div class="hero-text">
-        <p class="script">Geladinhos Gourmet</p>
+        <p class="script">Gela Gourmet</p>
         <h1>Cremosos, recheados e irresistíveis! ♡</h1>
-
-        <ul>
-          <li>🍓 Sabores que dão água na boca</li>
-          <li>📍 Tambaú e Santa Cruz das Palmeiras</li>
-          <li>💬 Faça seu pedido pelo site</li>
-        </ul>
+        <p class="hero-sub">Escolha seus favoritos e peça pelo WhatsApp em poucos toques.</p>
 
         <div class="hero-actions">
-          <a class="btn" href="#cardapio">Ver cardápio ↗</a>
-          <a class="btn ghost" href="#pedido">Fazer meu pedido</a>
+          <a class="btn" href="#cardapio">Ver cardápio</a>
+          <a class="btn ghost" href="#pedido">Meu pedido</a>
         </div>
+
+        <p class="hero-info">📍 Tambaú e Santa Cruz das Palmeiras · 🕐 Todos os dias, 13h às 22h</p>
       </div>
 
       <div class="hero-logo-wrap hero-photo-stage" id="heroStage">
@@ -67,17 +110,10 @@
         <span class="hero-orbit hero-orbit-two" aria-hidden="true">✦</span>
         <img class="hero-logo hero-photo"
              src="imagens/pacoca (2).jpeg"
-             alt="Geladinho gourmet de morango"
+             alt="Geladinho gourmet"
              fetchpriority="high">
         <span class="hero-photo-tag">Feito para apaixonar</span>
       </div>
-    </section>
-
-    <section class="benefits">
-      <div>❄️ <b>SABORES<br>INCRÍVEIS</b></div>
-      <div>♡ <b>PRODUTOS<br>DE QUALIDADE</b></div>
-      <div>🚚 <b>ENTREGA<br>RÁPIDA</b></div>
-      <div>✓ <b>PEDIDO<br>FÁCIL</b></div>
     </section>
 
     <section class="photo-story" aria-label="Conheça nossos sabores">
@@ -91,7 +127,7 @@
       <div class="photo-story-gallery">
         <figure class="story-photo story-photo-main">
           <img src="imagens/oreo1.jpg" alt="Geladinho gourmet de Oreo" loading="lazy">
-          <figcaption>Chocolate & Oreo</figcaption>
+          <figcaption>Chocolate &amp; Oreo</figcaption>
         </figure>
         <figure class="story-photo story-photo-small">
           <img src="imagens/pudim1.jpg" alt="Geladinhos e pudim com calda" loading="lazy">
@@ -103,47 +139,17 @@
     <section id="cardapio" class="section">
       <header class="section-head">
         <p class="script">Nosso Cardápio</p>
-        <h2>Escolha seus sabores favoritos! ♡</h2>
-      </header>
-      <div id="products" class="cards" aria-live="polite"></div>
-    </section>
-
-    <section id="sobre" class="section why">
-      <blockquote class="quote">
-        <p>“Geladinho maravilhoso! Sempre peço e nunca decepciona. Super recomendo!”</p>
-        <footer>— Cliente</footer>
-      </blockquote>
-    </section>
-
-    <section id="como-pedir" class="section how">
-      <header class="section-head">
-        <p class="script">Como pedir</p>
-        <h2>Quatro passos, sem cadastro</h2>
+        <h2>Escolha seus favoritos! ♡</h2>
       </header>
 
-      <ol class="steps">
-        <li>
-          <h3>Escolha os sabores</h3>
-          <p>Adicione os geladinhos e ajuste as quantidades.</p>
-        </li>
-        <li>
-          <h3>Entrega ou retirada</h3>
-          <p>Informe como prefere receber seu pedido.</p>
-        </li>
-        <li>
-          <h3>Seus dados e pagamento</h3>
-          <p>Preencha seu nome, telefone e forma de pagamento.</p>
-        </li>
-        <li>
-          <h3>Finalize pelo WhatsApp</h3>
-          <p>Confira seu pedido e envie a mensagem para confirmar.</p>
-        </li>
-      </ol>
+      <div id="categoryTabs" class="category-tabs" role="tablist" aria-label="Filtrar por categoria"></div>
+
+      <div id="products" aria-live="polite"></div>
     </section>
 
     <section id="pedido" class="section order-section">
       <header class="section-head">
-        <p class="script">Faça já o seu pedido!</p>
+        <p class="script">Seu pedido</p>
         <h2>Monte do seu jeito ♡</h2>
       </header>
 
@@ -164,7 +170,7 @@
                 <input type="radio" name="orderType" value="delivery" checked>
                 <span>
                   <strong>Entrega</strong>
-                  <small>Tambaú ou Santa Cruz das Palmeiras</small>
+                  <small>Tambaú ou Santa Cruz</small>
                 </span>
               </label>
 
@@ -195,7 +201,7 @@
               <div class="address-row">
                 <div>
                   <label for="number">Número</label>
-                  <input id="number" type="text" inputmode="numeric" placeholder="Número">
+                  <input id="number" type="text" inputmode="numeric" placeholder="Nº">
                 </div>
                 <div>
                   <label for="neighborhood">Bairro</label>
@@ -221,7 +227,7 @@
 
             <label for="customerBirthday">Data de aniversário (opcional)</label>
             <input id="customerBirthday" type="date" min="1900-01-01" autocomplete="bday">
-            <small class="field-hint">Assim a Gela Gourmet pode preparar uma surpresa no seu dia 🎂</small>
+            <small class="field-hint">Assim preparamos uma surpresa no seu dia 🎂</small>
 
             <label for="paymentMethod">Forma de pagamento</label>
             <select id="paymentMethod">
@@ -241,7 +247,7 @@
 
           <div class="total-details">
             <div class="subtotal-row">
-              <span>Geladinhos</span>
+              <span>Produtos</span>
               <strong id="subtotal">R$ 0,00</strong>
             </div>
             <div class="delivery-row">
@@ -266,62 +272,6 @@
       </div>
     </section>
 
-    <section id="entregas" class="section delivery-info">
-      <header class="section-head">
-        <p class="script">Entregas</p>
-        <h2>Entrega e retirada</h2>
-        <p>Atendemos todos os dias, das 13h às 22h.</p>
-      </header>
-
-      <div class="delivery-grid">
-        <article>
-          <h3>Tambaú</h3>
-          <p>Entrega com taxa de R$ 5,00.</p>
-        </article>
-        <article>
-          <h3>Santa Cruz das Palmeiras</h3>
-          <p>Valor da entrega a combinar.</p>
-        </article>
-        <article>
-          <h3>Retirada</h3>
-          <p>Sem taxa. Escolha “Retirada” ao montar o pedido.</p>
-        </article>
-      </div>
-    </section>
-
-    <section id="duvidas" class="section faq">
-      <header class="section-head">
-        <p class="script">Dúvidas</p>
-        <h2>Perguntas frequentes</h2>
-      </header>
-
-      <div class="faq-list">
-        <details>
-          <summary>Como faço meu pedido?</summary>
-          <p>Escolha os sabores, informe entrega ou retirada, preencha seus dados e finalize pelo WhatsApp.</p>
-        </details>
-        <details>
-          <summary>Quais formas de pagamento vocês aceitam?</summary>
-          <p>Pix, dinheiro e cartão.</p>
-        </details>
-        <details>
-          <summary>Quanto custa a entrega?</summary>
-          <p>Em Tambaú a taxa é de R$ 5,00. Em Santa Cruz das Palmeiras, o valor é combinado pelo WhatsApp. Na retirada não há taxa.</p>
-        </details>
-        <details>
-          <summary>Qual o horário de atendimento?</summary>
-          <p>Todos os dias, das 13h às 22h.</p>
-        </details>
-        <details>
-          <summary>Um sabor aparece como esgotado. E agora?</summary>
-          <p>Esse sabor está indisponível no momento. Os demais sabores continuam disponíveis.</p>
-        </details>
-        <details>
-          <summary>Como acompanho meu pedido?</summary>
-          <p>Use o botão “Acompanhar pedido” no mesmo aparelho em que fez a compra.</p>
-        </details>
-      </div>
-    </section>
   </main>
 
   <a class="cart-bar" id="cartBar" href="#pedido">
@@ -351,5 +301,31 @@
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="efeitos.js"></script>
   <script src="script.js"></script>
+
+  <!-- Esconde o loader quando o cardápio aparece (mín. 1s, máx. 6s) -->
+  <script>
+    (function () {
+      var loader = document.getElementById("loader");
+      var start = Date.now(), closed = false;
+      function close() {
+        if (closed) return; closed = true;
+        var wait = Math.max(0, 1000 - (Date.now() - start));
+        setTimeout(function () {
+          loader.classList.add("done");
+          document.documentElement.classList.remove("loading");
+          setTimeout(function () { loader.remove(); }, 700);
+        }, wait);
+      }
+      var prods = document.getElementById("products");
+      if (prods && window.MutationObserver) {
+        var mo = new MutationObserver(function () {
+          if (prods.children.length) { mo.disconnect(); close(); }
+        });
+        mo.observe(prods, { childList: true });
+      }
+      window.addEventListener("load", function () { setTimeout(close, 2500); });
+      setTimeout(close, 6000);
+    })();
+  </script>
 </body>
 </html>

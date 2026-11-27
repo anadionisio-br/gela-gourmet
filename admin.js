@@ -1,3 +1,4 @@
+
 const SUPABASE_URL = "https://aiirehncupywhmftzzmn.supabase.co";
 
 // Use aqui a sua Publishable Key
@@ -12,6 +13,264 @@ const supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 let produtos = [];
 
 let produtoEditando = null;
+
+// =========================
+// GERENCIAR CATEGORIAS (CRIAR, EDITAR, EXCLUIR)
+// =========================
+
+const CATEGORIAS_PADRAO_ADMIN = [
+  { id: null, slug: "geladinho", nome: "Geladinhos Gourmet", icone: "🍦", ordem: 1, ativa: true },
+  { id: null, slug: "fondue", nome: "Fondue", icone: "🍫", ordem: 2, ativa: true },
+  { id: null, slug: "picole", nome: "Picolé Gourmet", icone: "🍭", ordem: 3, ativa: true }
+];
+
+let listaCategorias = [...CATEGORIAS_PADRAO_ADMIN];
+let categoriaEditando = null;
+let tabelaCategoriasDisponivel = false;
+
+function gerarSlugCategoria(texto) {
+  return String(texto || "")
+    .toLowerCase()
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-+|-+$/g, "") || ("cat-" + Date.now());
+}
+
+function escaparHtmlAdmin(str) {
+  return String(str || "").replace(/[&<>"']/g, (c) => (
+    { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]
+  ));
+}
+
+function labelCategoria(slug) {
+  const encontrada = listaCategorias.find((c) => c.slug === slug);
+  if (encontrada) {
+    return `${encontrada.icone || "🍨"} ${encontrada.nome}`;
+  }
+  return `🍨 ${slug || "Geladinhos Gourmet"}`;
+}
+
+function preencherSelectsCategorias() {
+  const selectProduto = document.getElementById("categoriaProduto");
+  const selectFiltro = document.getElementById("filtroCategoriaAdmin");
+
+  const opcoes = listaCategorias
+    .map((c) => `<option value="${escaparHtmlAdmin(c.slug)}">${escaparHtmlAdmin(c.icone || "🍨")} ${escaparHtmlAdmin(c.nome)}</option>`)
+    .join("");
+
+  if (selectProduto) {
+    const valorAtual = selectProduto.value;
+    selectProduto.innerHTML = opcoes;
+    if (valorAtual && listaCategorias.some((c) => c.slug === valorAtual)) {
+      selectProduto.value = valorAtual;
+    }
+  }
+
+  if (selectFiltro) {
+    const filtroAtual = selectFiltro.value || "todos";
+    selectFiltro.innerHTML = '<option value="todos">Todas as categorias</option>' + opcoes;
+    if (filtroAtual === "todos" || listaCategorias.some((c) => c.slug === filtroAtual)) {
+      selectFiltro.value = filtroAtual;
+    }
+  }
+}
+
+async function carregarCategorias() {
+  const grid = document.getElementById("categoriasGrid");
+  if (grid) {
+    grid.innerHTML = '<div class="loading">Carregando categorias...</div>';
+  }
+
+  const { data, error } = await supabaseClient
+    .from("categorias")
+    .select("id, slug, nome, icone, ordem, ativa")
+    .order("ordem", { ascending: true })
+    .order("id", { ascending: true });
+
+  if (error) {
+    console.warn("Tabela categorias não encontrada ou indisponível:", error.message);
+    tabelaCategoriasDisponivel = false;
+    listaCategorias = [...CATEGORIAS_PADRAO_ADMIN];
+    preencherSelectsCategorias();
+    if (grid) {
+      grid.innerHTML = `<div class="loading">Execute o arquivo <strong>setup-categorias.sql</strong> no SQL Editor do Supabase para habilitar a criação, edição e exclusão de categorias.</div>`;
+    }
+    return;
+  }
+
+  tabelaCategoriasDisponivel = true;
+  listaCategorias = data || [];
+  preencherSelectsCategorias();
+  mostrarCategorias();
+  mostrarProdutos();
+}
+
+function mostrarCategorias() {
+  const grid = document.getElementById("categoriasGrid");
+  if (!grid) return;
+
+  if (!listaCategorias.length) {
+    grid.innerHTML = '<div class="loading">Nenhuma categoria cadastrada. Clique em “Nova categoria”.</div>';
+    return;
+  }
+
+  grid.innerHTML = listaCategorias.map((cat) => {
+    const qtdProdutos = produtos.filter((p) => (p.categoria || "geladinho") === cat.slug).length;
+    return `
+      <article class="product-card category-card">
+        <div class="product-info">
+          <span class="product-category-badge">Ordem: ${Number(cat.ordem || 0)}</span>
+          <h3 class="product-name">${escaparHtmlAdmin(cat.icone || "🍨")} ${escaparHtmlAdmin(cat.nome)}</h3>
+          <div class="product-price" style="font-size: 14px; font-weight: 500; color: #6e5a60;">
+            ${qtdProdutos} ${qtdProdutos === 1 ? "produto vinculado" : "produtos vinculados"}
+          </div>
+          <div class="product-actions">
+            <button class="edit-button" onclick="abrirEdicaoCategoria(${Number(cat.id)})">✏️ Editar</button>
+            <button class="delete-button" onclick="excluirCategoria(${Number(cat.id)})">🗑️ Excluir</button>
+          </div>
+        </div>
+      </article>
+    `;
+  }).join("");
+}
+
+function abrirCriacaoCategoria() {
+  if (!tabelaCategoriasDisponivel) {
+    alert("A tabela 'categorias' ainda não foi criada no Supabase. Execute o arquivo setup-categorias.sql no SQL Editor do Supabase e clique em Atualizar.");
+    return;
+  }
+  categoriaEditando = null;
+  document.getElementById("nomeCategoria").value = "";
+  document.getElementById("iconeCategoria").value = "🍨";
+  document.getElementById("ordemCategoria").value = String(listaCategorias.length + 1);
+  document.getElementById("tituloModalCategoria").textContent = "Nova categoria";
+  document.getElementById("modalCategoria").classList.add("show");
+}
+
+function abrirEdicaoCategoria(id) {
+  if (!tabelaCategoriasDisponivel) {
+    alert("A tabela 'categorias' ainda não foi criada no Supabase. Execute o arquivo setup-categorias.sql no SQL Editor do Supabase e clique em Atualizar.");
+    return;
+  }
+  const cat = listaCategorias.find((c) => Number(c.id) === Number(id));
+  if (!cat) return;
+
+  categoriaEditando = cat;
+  document.getElementById("nomeCategoria").value = cat.nome;
+  document.getElementById("iconeCategoria").value = cat.icone || "🍨";
+  document.getElementById("ordemCategoria").value = String(cat.ordem ?? 0);
+  document.getElementById("tituloModalCategoria").textContent = "Editar categoria";
+  document.getElementById("modalCategoria").classList.add("show");
+}
+
+function fecharModalCategoria() {
+  document.getElementById("modalCategoria").classList.remove("show");
+  categoriaEditando = null;
+}
+
+async function salvarCategoria() {
+  const nome = document.getElementById("nomeCategoria").value.trim();
+  const icone = document.getElementById("iconeCategoria").value.trim() || "🍨";
+  const ordem = parseInt(document.getElementById("ordemCategoria").value, 10) || 0;
+
+  if (!nome) {
+    alert("Digite o nome da categoria.");
+    return;
+  }
+
+  if (!categoriaEditando) {
+    let slugBase = gerarSlugCategoria(nome);
+    let slugFinal = slugBase;
+    let contador = 2;
+    while (listaCategorias.some((c) => c.slug === slugFinal)) {
+      slugFinal = `${slugBase}-${contador++}`;
+    }
+
+    const { error } = await supabaseClient.from("categorias").insert({
+      slug: slugFinal,
+      nome: nome,
+      icone: icone,
+      ordem: ordem,
+      ativa: true
+    });
+
+    if (error) {
+      alert("Não foi possível criar a categoria:\n" + error.message);
+      return;
+    }
+
+    alert("Categoria criada com sucesso!");
+  } else {
+    const { error } = await supabaseClient
+      .from("categorias")
+      .update({
+        nome: nome,
+        icone: icone,
+        ordem: ordem
+      })
+      .eq("id", categoriaEditando.id);
+
+    if (error) {
+      alert("Não foi possível atualizar a categoria:\n" + error.message);
+      return;
+    }
+
+    alert("Categoria atualizada com sucesso!");
+  }
+
+  fecharModalCategoria();
+  await carregarCategorias();
+}
+
+async function excluirCategoria(id) {
+  const cat = listaCategorias.find((c) => Number(c.id) === Number(id));
+  if (!cat) return;
+
+  const vinculados = produtos.filter((p) => (p.categoria || "geladinho") === cat.slug);
+
+  if (vinculados.length > 0) {
+    const outras = listaCategorias.filter((c) => Number(c.id) !== Number(id));
+    if (outras.length === 0) {
+      alert("Não é possível excluir a única categoria enquanto houver produtos cadastrados.");
+      return;
+    }
+    const destino = outras[0];
+    const confirmarMover = confirm(
+      `A categoria "${cat.nome}" possui ${vinculados.length} produto(s) vinculado(s).\n\nDeseja excluir esta categoria e mover os produtos para "${destino.nome}"?`
+    );
+    if (!confirmarMover) return;
+
+    const { error: moveError } = await supabaseClient
+      .from("produtos")
+      .update({ categoria: destino.slug })
+      .eq("categoria", cat.slug);
+
+    if (moveError) {
+      alert("Não foi possível mover os produtos vinculados:\n" + moveError.message);
+      return;
+    }
+  } else {
+    if (!confirm(`Tem certeza que deseja excluir a categoria "${cat.nome}"?`)) {
+      return;
+    }
+  }
+
+  const { error } = await supabaseClient
+    .from("categorias")
+    .delete()
+    .eq("id", id);
+
+  if (error) {
+    alert("Não foi possível excluir a categoria:\n" + error.message);
+    return;
+  }
+
+  alert("Categoria excluída com sucesso!");
+  await carregarProdutos();
+  await carregarCategorias();
+}
+
 
 // =========================
 // VERIFICAR LOGIN
@@ -71,6 +330,8 @@ async function carregarProdutos() {
   atualizarResumo();
 
   mostrarProdutos();
+
+  if (tabelaCategoriasDisponivel) mostrarCategorias();
 }
 
 // =========================
@@ -79,20 +340,25 @@ async function carregarProdutos() {
 
 function mostrarProdutos() {
   const grid = document.getElementById("productsGrid");
+  const filtroCat = document.getElementById("filtroCategoriaAdmin")?.value || "todos";
+  const lista = filtroCat === "todos"
+    ? produtos
+    : produtos.filter((p) => (p.categoria || "geladinho") === filtroCat);
 
-  if (produtos.length === 0) {
+  if (lista.length === 0) {
     grid.innerHTML = `
             <div class="loading">
-                Nenhum produto cadastrado.
+                Nenhum produto cadastrado nesta categoria.
             </div>
         `;
 
     return;
   }
 
-  grid.innerHTML = produtos
+  grid.innerHTML = lista
     .map((produto) => {
       const disponivel = produto.disponivel;
+      const catLabel = labelCategoria(produto.categoria);
 
       return `
             <article class="product-card">
@@ -105,6 +371,8 @@ function mostrarProdutos() {
 
 
                 <div class="product-info">
+
+                    <span class="product-category-badge">${escaparHtmlAdmin(catLabel)}</span>
 
                     <h3 class="product-name">
                         ${produto.nome}
@@ -190,6 +458,8 @@ function abrirCriacao() {
 
     // Limpa os campos
     document.getElementById("nomeProduto").value = "";
+    preencherSelectsCategorias();
+    const catCreate = document.getElementById("categoriaProduto"); if (catCreate && listaCategorias.length) catCreate.value = listaCategorias[0].slug;
 
     document.getElementById("precoProduto").value = "";
 
@@ -211,7 +481,7 @@ function abrirCriacao() {
 
     if (descricao) {
         descricao.textContent =
-            "Preencha os dados do geladinho.";
+            "Preencha os dados do produto.";
     }
 
 
@@ -251,6 +521,10 @@ function abrirEdicao(id) {
     document.getElementById("nomeProduto").value =
         produto.nome;
 
+    preencherSelectsCategorias();
+    const catEdit = document.getElementById("categoriaProduto");
+    if (catEdit) catEdit.value = produto.categoria || (listaCategorias[0]?.slug || "geladinho");
+
 
     // Preenche o preço
     document.getElementById("precoProduto").value =
@@ -280,7 +554,7 @@ function abrirEdicao(id) {
 
     if (descricao) {
         descricao.textContent =
-            "Altere os dados do geladinho.";
+            "Altere os dados do produto.";
     }
 
 
@@ -331,6 +605,8 @@ function fecharModalProduto() {
 
     // Limpa os campos
     document.getElementById("nomeProduto").value = "";
+    preencherSelectsCategorias();
+    const catCreate = document.getElementById("categoriaProduto"); if (catCreate && listaCategorias.length) catCreate.value = listaCategorias[0].slug;
 
     document.getElementById("precoProduto").value = "";
 
@@ -352,6 +628,8 @@ function fecharModalProduto() {
 
 async function salvarProduto() {
   const nome = document.getElementById("nomeProduto").value.trim();
+
+  const categoria = document.getElementById("categoriaProduto")?.value || "geladinho";
 
   const preco = parseFloat(document.getElementById("precoProduto").value);
 
@@ -441,6 +719,8 @@ async function salvarProduto() {
     const { error } = await supabaseClient.from("produtos").insert({
       nome: nome,
 
+      categoria: categoria,
+
       preco: preco,
 
       imagem: imagemUrl,
@@ -510,6 +790,8 @@ async function salvarProduto() {
       .from("produtos")
       .update({
         nome: nome,
+
+        categoria: categoria,
 
         preco: preco,
 
@@ -719,9 +1001,18 @@ async function criarAdicional() {
   if (valorTexto === null) return;
   const preco = Number(valorTexto.trim().replace(/\./g, "").replace(",", "."));
   if (!Number.isFinite(preco) || preco < 0) return alert("Informe um preço válido.");
+  const slugsDisponiveis = listaCategorias.map((c) => c.slug).concat(["todos"]);
+  const catTexto = prompt(`Categoria (${slugsDisponiveis.join(", ")}):`, slugsDisponiveis[0] || "geladinho");
+  if (catTexto === null) return;
+  const catLimpa = slugsDisponiveis.includes(catTexto.trim().toLowerCase())
+    ? catTexto.trim().toLowerCase()
+    : (slugsDisponiveis[0] || "geladinho");
 
-  const { error } = await supabaseClient.from("adicionais").insert({ nome: nomeLimpo, preco, disponivel: true });
-  if (error) return alert("Não foi possível cadastrar: " + error.message);
+  let res = await supabaseClient.from("adicionais").insert({ nome: nomeLimpo, preco, disponivel: true, categoria: catLimpa });
+  if (res.error) {
+    res = await supabaseClient.from("adicionais").insert({ nome: nomeLimpo, preco, disponivel: true });
+  }
+  if (res.error) return alert("Não foi possível cadastrar: " + res.error.message);
   await carregarAdicionais();
 }
 
@@ -1023,10 +1314,11 @@ async function carregarHistoricoEstoque() {
 // INICIAR PAINEL
 // =========================
 
-verificarLogin().then((logado) => {
+verificarLogin().then(async (logado) => {
   if (logado) {
     carregarLoja();
-    carregarProdutos();
+    await carregarCategorias();
+    await carregarProdutos();
     carregarAdicionais();
     carregarEstoque();
   }

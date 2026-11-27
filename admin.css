@@ -1,3 +1,4 @@
+
 * {
     margin: 0;
     padding: 0;
@@ -1046,4 +1047,138 @@ body > *:not(.sidebar):not(#modalProduto):not([id*="modal"]):not([class*="modal"
     #formEstoque {
         padding: 20px;
     }
+}
+
+/* Categoria nos cards, gestão e filtro do admin */
+.product-category-badge {
+    display: inline-block;
+    margin-bottom: 6px;
+    padding: 4px 10px;
+    border-radius: 999px;
+    background: #fdf0f3;
+    color: #9b4056;
+    font-size: 12px;
+    font-weight: 700;
+}
+
+.admin-category-filter select {
+    height: 42px;
+    padding: 0 14px;
+    border: 1px solid #e4dadd;
+    border-radius: 10px;
+    background: #ffffff;
+    color: #3b292e;
+    font-family: inherit;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+}
+
+.categories-admin-section .category-card .product-info {
+    padding-top: 18px;
+}
+
+
+/* ========================================
+   MODAL CRIAR / EDITAR CATEGORIA
+======================================== */
+
+#modalCategoria {
+    position: fixed;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(40, 25, 30, .55);
+    display: none;
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+    box-sizing: border-box;
+    z-index: 10000;
+}
+
+#modalCategoria.show {
+    display: flex;
+}
+
+#modalCategoria .modal-content {
+    width: min(500px, 95%);
+    max-height: 90vh;
+    overflow-y: auto;
+    background: white;
+    border-radius: 20px;
+    padding: 28px;
+    position: relative;
+    box-shadow: 0 20px 60px rgba(0, 0, 0, .25);
+    animation: abrirModal .2s ease;
+}
+
+#modalCategoria .modal-header {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 15px;
+    margin-bottom: 25px;
+}
+
+#modalCategoria .modal-header h2 { font-size: 20px; color: #3d292f; margin: 0; }
+#modalCategoria .modal-header p { font-size: 12px; color: #9a898e; margin-top: 5px; }
+
+#modalCategoria .close-modal {
+    position: static;
+    width: 36px;
+    height: 36px;
+    padding: 0;
+    border: none;
+    border-radius: 50%;
+    background: #fff1f3;
+    color: #9b4056;
+    font-size: 24px;
+    line-height: 36px;
+    text-align: center;
+    cursor: pointer;
+    flex-shrink: 0;
+}
+
+#modalCategoria .close-modal:hover { background: #fbe5e9; }
+
+#modalCategoria .form-group { margin-bottom: 18px; }
+#modalCategoria .form-group label { display: block; font-size: 13px; font-weight: bold; margin-bottom: 8px; color: #3b292e; }
+
+#modalCategoria .form-group input,
+#modalCategoria .form-group select {
+    width: 100%;
+    height: 46px;
+    padding: 0 13px;
+    border: 1px solid #e4dadd;
+    border-radius: 10px;
+    outline: none;
+    font-family: inherit;
+    font-size: 14px;
+    background: white;
+    color: #3b292e;
+}
+
+#modalCategoria .form-group input:focus,
+#modalCategoria .form-group select:focus {
+    border-color: #9b4056;
+    box-shadow: 0 0 0 3px rgba(155, 64, 86, .08);
+}
+
+#modalCategoria .modal-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 10px;
+    margin-top: 22px;
+}
+
+#modalCategoria .modal-actions button {
+    height: 44px;
+    padding: 0 18px;
+    border-radius: 10px;
+    border: none;
+    font-family: inherit;
+    font-size: 14px;
+    font-weight: 700;
+    cursor: pointer;
 }

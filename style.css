@@ -1,3 +1,4 @@
+
 /* =========================================================
    GELA GOURMET — ESTILO PRINCIPAL
    Paleta tirada do logotipo: creme, bronze do lettering,
@@ -2170,4 +2171,55 @@ input[type="date"]:focus {
     .extras-box > small {
         display: none;
     }
+}
+
+/* =========================================================
+   CATEGORIAS DO CARDÁPIO
+========================================================= */
+.category-tabs {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 10px;
+    margin: 0 auto 32px;
+}
+
+.cat-tab {
+    padding: 10px 20px;
+    border-radius: 999px;
+    border: 1.5px solid var(--linha);
+    background: #fff;
+    color: var(--texto);
+    font-family: inherit;
+    font-size: .94rem;
+    font-weight: 700;
+    cursor: pointer;
+    transition: transform .18s, background .2s, color .2s, border-color .2s, box-shadow .2s;
+}
+
+.cat-tab:hover {
+    border-color: var(--chocolate);
+    transform: translateY(-1px);
+}
+
+.cat-tab.active {
+    background: var(--chocolate);
+    border-color: var(--chocolate);
+    color: #fff;
+    box-shadow: 0 8px 20px rgba(216, 95, 118, .25);
+}
+
+.category-section + .category-section {
+    margin-top: 48px;
+}
+
+.category-heading {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin: 0 0 22px;
+    padding-bottom: 10px;
+    border-bottom: 2px solid var(--linha);
+    font-size: clamp(1.3rem, 2.4vw, 1.65rem);
+    color: var(--texto);
 }

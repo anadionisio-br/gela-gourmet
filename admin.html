@@ -1,3 +1,4 @@
+
 <!doctype html>
 <html lang="pt-BR">
   <head>
@@ -38,6 +39,11 @@
         <a href="#loja" class="menu-item">
           <span>🏪</span>
           Loja
+        </a>
+
+        <a href="#categorias" class="menu-item">
+          <span>🏷️</span>
+          Categorias
         </a>
 
         <a href="#produtos" class="menu-item">
@@ -185,6 +191,33 @@
       </section>
 
       <!-- =========================
+             CATEGORIAS
+        ========================== -->
+
+      <section id="categorias" class="products-section categories-admin-section">
+        <div class="products-header">
+          <div>
+            <h2>Categorias</h2>
+            <p>Crie, edite, reordene ou exclua as categorias do cardápio (ex.: Geladinhos, Fondue, Picolé Gourmet).</p>
+          </div>
+
+          <div class="products-header-actions">
+            <button class="refresh-button" onclick="carregarCategorias()">
+              ↻ Atualizar
+            </button>
+
+            <button class="add-product-button" onclick="abrirCriacaoCategoria()">
+              ➕ Nova categoria
+            </button>
+          </div>
+        </div>
+
+        <div id="categoriasGrid" class="products-grid">
+          <div class="loading">Carregando categorias...</div>
+        </div>
+      </section>
+
+      <!-- =========================
              PRODUTOS
         ========================== -->
 
@@ -195,7 +228,13 @@
           <div>
             <h2>Produtos</h2>
 
-            <p>Gerencie os geladinhos disponíveis no seu catálogo.</p>
+            <p>Gerencie os itens disponíveis no seu catálogo por categoria.</p>
+          </div>
+
+          <div class="admin-category-filter">
+            <select id="filtroCategoriaAdmin" onchange="mostrarProdutos()" aria-label="Filtrar por categoria">
+              <option value="todos">Todas as categorias</option>
+            </select>
           </div>
 
           <div class="products-header-actions">
@@ -321,6 +360,18 @@
           />
         </div>
 
+        <!-- CATEGORIA -->
+
+        <div class="form-group">
+          <label for="categoriaProduto"> Categoria </label>
+
+          <select id="categoriaProduto">
+            <option value="geladinho">🍦 Geladinhos Gourmet</option>
+            <option value="fondue">🍫 Fondue</option>
+            <option value="picole">🍭 Picolé Gourmet</option>
+          </select>
+        </div>
+
         <!-- PREÇO -->
 
         <div class="form-group">
@@ -377,8 +428,70 @@
          JAVASCRIPT
     ========================== -->
 
+    
+    <!-- =========================
+         MODAL CRIAR / EDITAR CATEGORIA
+    ========================== -->
+
+    <div id="modalCategoria" class="modal">
+      <div class="modal-content">
+        <div class="modal-header">
+          <div>
+            <h2 id="tituloModalCategoria">Nova categoria</h2>
+            <p>Defina o nome e o ícone da categoria do cardápio.</p>
+          </div>
+          <button class="close-modal" onclick="fecharModalCategoria()">×</button>
+        </div>
+
+        <div class="form-group">
+          <label for="nomeCategoria">Nome da categoria</label>
+          <input
+            type="text"
+            id="nomeCategoria"
+            placeholder="Ex: Fondue, Picolé Gourmet, Açaí..."
+          />
+        </div>
+
+        <div class="inventory-form-grid">
+          <div class="form-group">
+            <label for="iconeCategoria">Ícone (emoji)</label>
+            <input
+              type="text"
+              id="iconeCategoria"
+              maxlength="8"
+              placeholder="Ex: 🍫"
+              value="🍨"
+            />
+          </div>
+
+          <div class="form-group">
+            <label for="ordemCategoria">Ordem de exibição</label>
+            <input
+              type="number"
+              id="ordemCategoria"
+              min="0"
+              step="1"
+              placeholder="Ex: 1"
+              value="0"
+            />
+          </div>
+        </div>
+
+        <div class="modal-actions">
+          <button class="cancel-button" onclick="fecharModalCategoria()">
+            Cancelar
+          </button>
+
+          <button class="save-button" onclick="salvarCategoria()">
+            💾 Salvar categoria
+          </button>
+        </div>
+      </div>
+    </div>
+
     <script src="admin.js"></script>
 
     <div id="modalEditar" class="modal"></div>
   </body>
 </html>
+Processado e analisado em código
