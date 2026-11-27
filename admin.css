@@ -8,6 +8,7 @@ body {
     font-family: Arial, Helvetica, sans-serif;
     background: #f8f5f6;
     color: #3b292e;
+    overflow-x: hidden;
 }
 
 /* =========================
@@ -140,6 +141,9 @@ nav {
 
 .main {
     margin-left: 260px;
+    width: calc(100% - 260px);
+    max-width: 100%;
+    min-width: 0;
     min-height: 100vh;
     padding: 35px 45px;
 }
@@ -236,6 +240,7 @@ nav {
     border: 1px solid #eee5e7;
     border-radius: 20px;
     padding: 28px;
+    min-width: 0;
 }
 
 .products-header {
@@ -560,7 +565,11 @@ nav {
     }
 
     .sidebar-bottom { display: none; }
-    .main { margin-left: 0; padding: 25px 15px; }
+    .main {
+        margin-left: 0;
+        width: 100%;
+        padding: 25px 15px;
+    }
     .topbar { align-items: flex-start; gap: 15px; flex-direction: column; }
     .products-grid { grid-template-columns: 1fr; }
     .products-section { padding: 18px; }
@@ -584,7 +593,7 @@ nav {
 .extras-admin-section .product-info { padding: 22px; }
 .extras-admin-section .product-actions { flex-wrap: wrap; }
 @media (max-width: 900px) {
-  .extras-admin-section .products-header { align-items: flex-start; flex-direction: column; }
+    .extras-admin-section .products-header { align-items: flex-start; flex-direction: column; }
 }
 
 /* =========================
@@ -681,4 +690,360 @@ nav {
     .store-control-head { flex-direction: column; }
     .store-control-actions { flex-direction: column-reverse; align-items: stretch; }
     .store-control-actions button { width: 100%; }
+}
+
+/* =========================
+   CONTROLE DE ESTOQUE
+========================= */
+
+.inventory-section {
+    margin-top: 28px;
+    width: 100%;
+    max-width: 100%;
+    min-width: 0;
+    overflow: hidden;
+}
+
+.inventory-summary {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 14px;
+    margin: 22px 0;
+}
+
+.inventory-stat {
+    background: #fff;
+    border: 1px solid #eee5e7;
+    border-radius: 13px;
+    padding: 17px 19px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    min-width: 0;
+}
+
+.inventory-stat span { color: #8e7d82; font-size: 13px; font-weight: 600; }
+.inventory-stat strong { color: #3d292f; font-size: 25px; }
+
+.inventory-toolbar {
+    display: flex;
+    gap: 12px;
+    margin: 18px 0;
+    flex-wrap: wrap;
+}
+
+.inventory-toolbar input,
+.inventory-toolbar select {
+    min-height: 43px;
+    border: 1px solid #e5dadd;
+    border-radius: 10px;
+    padding: 0 13px;
+    background: #fff;
+    color: #49373d;
+    font: inherit;
+}
+
+.inventory-toolbar input { flex: 1; min-width: 180px; }
+
+.inventory-table-wrap {
+    width: 100%;
+    max-width: 100%;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    border: 1px solid #eee5e7;
+    border-radius: 13px;
+    background: #fff;
+}
+
+.inventory-table {
+    width: 100%;
+    border-collapse: collapse;
+    min-width: 760px;
+    text-align: left;
+}
+
+.inventory-table th {
+    background: #faf6f7;
+    color: #8a747b;
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: .055em;
+    padding: 14px 13px;
+    white-space: nowrap;
+}
+
+.inventory-table td {
+    padding: 14px 13px;
+    border-top: 1px solid #f1eaec;
+    color: #55434a;
+    font-size: 13px;
+    vertical-align: middle;
+}
+
+.inventory-table td strong { color: #38272d; }
+.inventory-table td small { display: block; margin-top: 4px; color: #9a898e; font-size: 11px; }
+.inventory-empty { text-align: center; color: #98888d !important; padding: 28px !important; }
+
+.stock-badge {
+    display: inline-flex;
+    align-items: center;
+    padding: 6px 9px;
+    border-radius: 30px;
+    font-size: 11px;
+    font-weight: 700;
+    white-space: nowrap;
+}
+
+.stock-ok { background: #e8f6ed; color: #267647; }
+.stock-low { background: #fff3dc; color: #98620b; }
+.stock-empty { background: #fdeaea; color: #b3261e; }
+.stock-out-label { background: #f0edf8; color: #66509b; }
+
+.stock-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    min-width: 255px;
+}
+
+.stock-actions button {
+    border: 0;
+    border-radius: 7px;
+    padding: 7px 9px;
+    font: inherit;
+    font-size: 11px;
+    font-weight: 700;
+    cursor: pointer;
+}
+
+.stock-in { background: #e7f6ed; color: #267647; }
+.stock-out { background: #fff0e9; color: #b4532b; }
+
+.inventory-history-head { margin: 28px 0 13px; }
+.inventory-history-head h3 { margin: 0 0 5px; color: #3d292f; font-size: 17px; }
+.inventory-history-head p { margin: 0; color: #99888d; font-size: 13px; }
+
+/* FORMULÁRIO DE ESTOQUE EM DUAS COLUNAS E CAMPOS 100% */
+
+.inventory-help {
+    margin: 4px 0 18px;
+    color: #8e7d82;
+    font-size: 13px;
+    line-height: 1.5;
+}
+
+.inventory-modal-content {
+    width: min(620px, 95%);
+    max-width: 620px;
+}
+
+.inventory-form-grid,
+.inventory-modal-content .inventory-form-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 16px;
+    width: 100%;
+}
+
+.inventory-form-grid .form-group,
+.inventory-modal-content .form-group,
+.inventory-section .form-group {
+    width: 100%;
+    min-width: 0;
+    margin-bottom: 0;
+}
+
+.inventory-form-grid .form-group label,
+.inventory-modal-content .form-group label,
+.inventory-section .form-group label {
+    display: block;
+    margin-bottom: 8px;
+    color: #49373d;
+    font-size: 13px;
+    font-weight: 700;
+}
+
+.inventory-form-grid input,
+.inventory-form-grid select,
+.inventory-form-grid textarea,
+.inventory-modal-content input,
+.inventory-modal-content select,
+.inventory-modal-content textarea,
+.inventory-section .form-group input,
+.inventory-section .form-group select,
+.inventory-section .form-group textarea {
+    display: block;
+    box-sizing: border-box;
+    width: 100%;
+    max-width: 100%;
+    min-width: 0;
+    min-height: 44px;
+    padding: 10px 12px;
+    border: 1px solid #e5dadd;
+    border-radius: 10px;
+    background: #fff;
+    color: #49373d;
+    font: inherit;
+    font-size: 14px;
+    outline: none;
+}
+
+.inventory-form-grid input:focus,
+.inventory-form-grid select:focus,
+.inventory-form-grid textarea:focus,
+.inventory-modal-content input:focus,
+.inventory-modal-content select:focus,
+.inventory-modal-content textarea:focus {
+    border-color: #9b4056;
+    box-shadow: 0 0 0 3px rgba(155, 64, 86, .08);
+}
+
+/* Caso algum campo do formulário precise ocupar a linha inteira */
+.inventory-form-grid .form-group.full-width {
+    grid-column: 1 / -1;
+}
+
+@media (max-width: 700px) {
+    .inventory-summary { grid-template-columns: 1fr; }
+    .inventory-toolbar { flex-direction: column; }
+    .inventory-toolbar input,
+    .inventory-toolbar select { width: 100%; }
+    .inventory-form-grid,
+    .inventory-modal-content .inventory-form-grid {
+        grid-template-columns: minmax(0, 1fr);
+        gap: 14px;
+    }
+}
+
+/* =================================================
+   CORREÇÃO DEFINITIVA DO FORMULÁRIO DE ESTOQUE
+================================================= */
+
+/* 1. Garante que todo o conteúdo principal fique à direita da sidebar */
+body > *:not(.sidebar):not(#modalProduto):not([id*="modal"]):not([class*="modal"]) {
+    margin-left: 260px;
+    width: calc(100% - 260px);
+    max-width: 100%;
+}
+
+/* 2. Se o formulário de estoque for um modal próprio (fora de #modalProduto) */
+[id*="modalEstoque"],
+[id*="ModalEstoque"],
+.inventory-modal {
+    position: fixed;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(40, 25, 30, .55);
+    display: none;
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+    z-index: 10000;
+}
+
+[id*="modalEstoque"].show,
+[id*="ModalEstoque"].show,
+.inventory-modal.show {
+    display: flex;
+}
+
+/* 3. Estilo do cartão/modal do formulário de estoque */
+.inventory-modal-content,
+.inventory-form-card,
+#formEstoque {
+    background: #ffffff;
+    border: 1px solid #eee5e7;
+    border-radius: 20px;
+    padding: 28px;
+    width: min(620px, 100%);
+    max-width: 100%;
+    box-shadow: 0 20px 60px rgba(0, 0, 0, .18);
+    position: relative;
+    z-index: 20;
+}
+
+/* 4. Organização em 2 colunas com campos 100% */
+.inventory-form-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 16px;
+    width: 100%;
+    margin-bottom: 16px;
+}
+
+.inventory-form-grid .form-group,
+.inventory-modal-content .form-group,
+#formEstoque .form-group {
+    width: 100%;
+    min-width: 0;
+    margin-bottom: 16px;
+}
+
+.inventory-form-grid .form-group {
+    margin-bottom: 0;
+}
+
+.inventory-modal-content label,
+#formEstoque label {
+    display: block;
+    font-size: 13px;
+    font-weight: bold;
+    margin-bottom: 8px;
+    color: #3b292e;
+}
+
+.inventory-modal-content input,
+.inventory-modal-content select,
+.inventory-modal-content textarea,
+#formEstoque input,
+#formEstoque select,
+#formEstoque textarea {
+    display: block;
+    width: 100%;
+    max-width: 100%;
+    min-width: 0;
+    height: 46px;
+    padding: 0 13px;
+    border: 1px solid #e4dadd;
+    border-radius: 10px;
+    background: #ffffff;
+    color: #3b292e;
+    font-family: inherit;
+    font-size: 14px;
+    outline: none;
+}
+
+.inventory-modal-content textarea,
+#formEstoque textarea {
+    height: auto;
+    min-height: 90px;
+    padding: 12px 13px;
+}
+
+.inventory-modal-content input:focus,
+.inventory-modal-content select:focus,
+#formEstoque input:focus,
+#formEstoque select:focus {
+    border-color: #9b4056;
+    box-shadow: 0 0 0 3px rgba(155, 64, 86, .08);
+}
+
+/* Responsividade para telas menores */
+@media (max-width: 700px) {
+    body > *:not(.sidebar):not(#modalProduto):not([id*="modal"]):not([class*="modal"]) {
+        margin-left: 0;
+        width: 100%;
+    }
+
+    .inventory-form-grid {
+        grid-template-columns: minmax(0, 1fr);
+    }
+
+    .inventory-modal-content,
+    .inventory-form-card,
+    #formEstoque {
+        padding: 20px;
+    }
 }

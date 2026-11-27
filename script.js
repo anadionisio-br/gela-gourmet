@@ -350,7 +350,7 @@ async function loadProducts() {
   try {
     const { data, error } = await supabaseClient
       .from("produtos")
-      .select("id, nome, preco, imagem, disponivel")
+      .select("id, nome, preco, imagem, disponivel, estoque_quantidade")
       .order("id", { ascending: true });
 
     if (error) {
@@ -397,7 +397,8 @@ async function loadProducts() {
         name: product.nome,
         price: Number(product.preco),
         img: product.imagem,
-        disponivel: product.disponivel !== false
+        disponivel: product.disponivel !== false && (product.estoque_quantidade === null || product.estoque_quantidade === undefined || Number(product.estoque_quantidade) > 0),
+        estoqueQuantidade: product.estoque_quantidade === null || product.estoque_quantidade === undefined ? null : Number(product.estoque_quantidade)
       };
     });
 
@@ -549,7 +550,12 @@ function changeQuantity(index, amount) {
   }
 
   const before = cart[index];
-  cart[index] = Math.max(0, cart[index] + amount);
+  const proxima = Math.max(0, cart[index] + amount);
+  if (amount > 0 && products[index].estoqueQuantidade !== null && proxima > products[index].estoqueQuantidade) {
+    showToast("Estoque disponível: " + products[index].estoqueQuantidade + " unidade(s).", "error");
+    return;
+  }
+  cart[index] = proxima;
 
   if (cart[index] === before) return;
 
@@ -1314,7 +1320,23 @@ async function createOrder() {
       address += " | Observação: " + note;
     }
 
-    const result = await supabaseClient.rpc("criar_pedido", {
+    // Reserva as unidades em uma operação transacional no banco antes de criar o pedido.
+    // O banco bloqueia os registros para impedir que duas compras usem o mesmo saldo.
+    const itensComEstoque = itensPedido
+      .filter(item => products.some(p => String(p.id) === String(item.produto_id) && p.estoqueQuantidade !== null))
+      .map(item => ({ produto_id: item.produto_id, quantidade: item.quantidade }));
+
+    let estoqueReservado = false;
+    if (itensComEstoque.length) {
+      const reserva = await supabaseClient.rpc("baixar_estoque_produtos", { p_itens: itensComEstoque });
+      if (reserva.error) throw reserva.error;
+      window.__reservaEstoqueToken = reserva.data;
+      estoqueReservado = true;
+    }
+
+    let result;
+    try {
+      result = await supabaseClient.rpc("criar_pedido", {
       p_cliente_nome: name,
       p_cliente_telefone: phone,
       p_cliente_endereco: address,
@@ -1322,12 +1344,24 @@ async function createOrder() {
       p_total: total,
       p_forma_pagamento: payment,
       p_tipo_entrega: orderType
-    });
+      });
+      if (result.error && estoqueReservado) {
+        const estorno = await supabaseClient.rpc("repor_estoque_produtos", { p_token: window.__reservaEstoqueToken });
+        if (estorno.error) console.error("Falha ao devolver estoque após erro no pedido:", estorno.error);
+      }
+    } catch (erroPedido) {
+      if (estoqueReservado) {
+        const estorno = await supabaseClient.rpc("repor_estoque_produtos", { p_token: window.__reservaEstoqueToken });
+        if (estorno.error) console.error("Falha ao devolver estoque após erro no pedido:", estorno.error);
+      }
+      throw erroPedido;
+    }
 
     if (result.error) {
       console.error("❌ Erro ao criar pedido:", result.error);
       throw result.error;
     }
+    window.__reservaEstoqueToken = null;
 
     let dadosPedido = result.data;
 
@@ -1348,6 +1382,10 @@ async function createOrder() {
     }
 
     if (!pedidoId) {
+      if (estoqueReservado) {
+        const estorno = await supabaseClient.rpc("repor_estoque_produtos", { p_token: window.__reservaEstoqueToken });
+        if (estorno.error) console.error("Falha ao devolver estoque sem confirmação do pedido:", estorno.error);
+      }
       console.error("❌ O Supabase não retornou o ID do pedido.");
 
       if (whatsappWindow && !whatsappWindow.closed) {
@@ -1419,6 +1457,8 @@ async function createOrder() {
     renderProducts();
     renderCart();
     updateTotal();
+    // Busca os saldos atualizados após a reserva da venda.
+    await loadProducts();
 
     nameInput.value = "";
     phoneInput.value = "";

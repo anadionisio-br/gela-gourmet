@@ -49,6 +49,11 @@
           Adicionais
         </a>
 
+        <a href="#estoque" class="menu-item">
+          <span>📦</span>
+          Controle de estoque
+        </a>
+
         <a href="pedidos/pedidos.html" class="menu-item">
           <span>📦</span>
           Pedidos
@@ -232,7 +237,59 @@
           <div class="loading">Carregando adicionais...</div>
         </div>
       </section>
+
+      <section id="estoque" class="products-section inventory-section">
+        <div class="products-header">
+          <div>
+            <h2>Controle de estoque</h2>
+            <p>Controle a quantidade de geladinhos prontos disponíveis para venda. As vendas reduzem o saldo automaticamente.</p>
+          </div>
+          <div class="products-header-actions">
+            <button class="refresh-button" onclick="carregarEstoque()">↻ Atualizar</button>
+            <button class="add-product-button" onclick="abrirModalEstoque()">＋ Definir estoque</button>
+          </div>
+        </div>
+        <div class="inventory-summary">
+          <article class="inventory-stat"><span>Sabores controlados</span><strong id="estoqueTotal">0</strong></article>
+          <article class="inventory-stat"><span>Estoque baixo</span><strong id="estoqueBaixo">0</strong></article>
+          <article class="inventory-stat"><span>Sem estoque</span><strong id="estoqueZerado">0</strong></article>
+        </div>
+        <div class="inventory-toolbar">
+          <input id="buscarEstoque" type="search" placeholder="Buscar geladinho..." oninput="mostrarEstoque()" />
+          <select id="filtroEstoque" onchange="mostrarEstoque()">
+            <option value="todos">Todos os itens</option>
+            <option value="baixo">Estoque baixo</option>
+            <option value="zerado">Sem estoque</option>
+            <option value="normal">Estoque normal</option>
+          </select>
+        </div>
+        <div class="inventory-table-wrap">
+          <table class="inventory-table">
+            <thead><tr><th>Geladinho</th><th>Preço</th><th>Disponíveis</th><th>Estoque mínimo</th><th>Status</th><th>Ações</th></tr></thead>
+            <tbody id="estoqueTabela"><tr><td colspan="6" class="inventory-empty">Carregando estoque...</td></tr></tbody>
+          </table>
+        </div>
+        <div class="inventory-history-head"><div><h3>Últimas movimentações</h3><p>Reposições e vendas registradas automaticamente.</p></div></div>
+        <div class="inventory-table-wrap">
+          <table class="inventory-table"><thead><tr><th>Data</th><th>Item</th><th>Movimento</th><th>Quantidade</th><th>Observação</th></tr></thead>
+          <tbody id="estoqueHistorico"><tr><td colspan="5" class="inventory-empty">Carregando histórico...</td></tr></tbody></table>
+        </div>
+      </section>
     </main>
+
+    <!-- Modal de definição do estoque de geladinhos -->
+    <div id="modalEstoque" class="modal">
+      <div class="modal-content inventory-modal-content">
+        <div class="modal-header"><div><h2 id="tituloModalEstoque">Definir estoque</h2><p>Escolha um sabor e informe quantas unidades estão prontas para venda.</p></div><button class="close-modal" onclick="fecharModalEstoque()">×</button></div>
+        <div class="form-group"><label for="estoqueProduto">Geladinho</label><select id="estoqueProduto"></select></div>
+        <div class="inventory-form-grid">
+          <div class="form-group"><label for="estoqueQuantidade">Quantidade disponível</label><input id="estoqueQuantidade" type="number" min="0" step="1" placeholder="Ex.: 50" /></div>
+          <div class="form-group"><label for="estoqueMinimo">Avisar quando chegar a</label><input id="estoqueMinimo" type="number" min="0" step="1" placeholder="Ex.: 5" /></div>
+        </div>
+        <p class="inventory-help">A quantidade será atualizada automaticamente conforme os pedidos forem registrados.</p>
+        <div class="modal-actions"><button class="cancel-button" onclick="fecharModalEstoque()">Cancelar</button><button class="save-button" onclick="salvarItemEstoque()">💾 Salvar estoque</button></div>
+      </div>
+    </div>
 
     <!-- =========================
          MODAL CRIAR / EDITAR

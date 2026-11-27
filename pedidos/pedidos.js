@@ -1130,16 +1130,21 @@ async function atualizarStatus() {
 
     try {
 
-        const { error } =
-            await supabaseClient
+        let error = null;
+        if (novoStatus === "cancelado" && pedidoSelecionado.status !== "cancelado") {
+            // A função SQL altera o status e devolve os geladinhos em uma única transação.
+            const resultadoCancelamento = await supabaseClient.rpc(
+                "cancelar_pedido_repor_estoque",
+                { p_pedido_id: pedidoSelecionado.id }
+            );
+            error = resultadoCancelamento.error;
+        } else {
+            const resultadoStatus = await supabaseClient
                 .from("pedidos")
-                .update({
-                    status: novoStatus
-                })
-                .eq(
-                    "id",
-                    pedidoSelecionado.id
-                );
+                .update({ status: novoStatus })
+                .eq("id", pedidoSelecionado.id);
+            error = resultadoStatus.error;
+        }
 
 
         if (error) {

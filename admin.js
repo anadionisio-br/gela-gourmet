@@ -877,6 +877,149 @@ async function salvarMensagemLoja() {
 }
 
 // =========================
+// CONTROLE DE ESTOQUE DE GELADINHOS PRONTOS
+// O saldo fica diretamente vinculado ao cadastro de cada produto.
+let itensEstoque = [];
+let produtoEstoqueEditando = null;
+
+function statusEstoque(produto) {
+  const qtd = Number(produto.estoque_quantidade || 0);
+  const minimo = Number(produto.estoque_minimo || 0);
+  if (qtd <= 0) return { texto: "Esgotado", classe: "stock-empty" };
+  if (qtd <= minimo) return { texto: "Estoque baixo", classe: "stock-low" };
+  return { texto: "Disponível", classe: "stock-ok" };
+}
+
+async function carregarEstoque() {
+  const tabela = document.getElementById("estoqueTabela");
+  if (!tabela) return;
+  tabela.innerHTML = '<tr><td colspan="6" class="inventory-empty">Carregando geladinhos...</td></tr>';
+  const { data, error } = await supabaseClient.from("produtos").select("id,nome,preco,disponivel,estoque_quantidade,estoque_minimo").order("nome");
+  if (error) {
+    tabela.innerHTML = `<tr><td colspan="6" class="inventory-empty">Não foi possível carregar o estoque. Execute o setup-estoque.sql no Supabase. ${String(error.message).replace(/[<>]/g, "")}</td></tr>`;
+    return;
+  }
+  itensEstoque = data || [];
+  atualizarResumoEstoque();
+  mostrarEstoque();
+  carregarHistoricoEstoque();
+}
+
+function atualizarResumoEstoque() {
+  const controlados = itensEstoque.filter(p => p.estoque_quantidade !== null && p.estoque_quantidade !== undefined);
+  const baixos = controlados.filter(p => Number(p.estoque_quantidade) > 0 && Number(p.estoque_quantidade) <= Number(p.estoque_minimo || 0)).length;
+  const zerados = controlados.filter(p => Number(p.estoque_quantidade) <= 0).length;
+  document.getElementById("estoqueTotal").textContent = controlados.length;
+  document.getElementById("estoqueBaixo").textContent = baixos;
+  document.getElementById("estoqueZerado").textContent = zerados;
+}
+
+function mostrarEstoque() {
+  const corpo = document.getElementById("estoqueTabela");
+  if (!corpo) return;
+  const busca = (document.getElementById("buscarEstoque")?.value || "").trim().toLocaleLowerCase("pt-BR");
+  const filtro = document.getElementById("filtroEstoque")?.value || "todos";
+  const filtrados = itensEstoque.filter(p => {
+    if (p.estoque_quantidade === null || p.estoque_quantidade === undefined) return false;
+    const st = statusEstoque(p);
+    const nome = String(p.nome || "").toLocaleLowerCase("pt-BR");
+    const okBusca = nome.includes(busca);
+    const okFiltro = filtro === "todos" || (filtro === "baixo" && st.classe === "stock-low") || (filtro === "zerado" && st.classe === "stock-empty") || (filtro === "normal" && st.classe === "stock-ok");
+    return okBusca && okFiltro;
+  });
+  if (!filtrados.length) {
+    corpo.innerHTML = '<tr><td colspan="6" class="inventory-empty">Nenhum geladinho com estoque configurado. Clique em “Definir estoque”.</td></tr>';
+    return;
+  }
+  corpo.innerHTML = filtrados.map(p => {
+    const st = statusEstoque(p);
+    const nome = String(p.nome || "").replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;", "'":"&#39;"}[c]));
+    return `<tr><td><strong>${nome}</strong></td><td>R$ ${Number(p.preco || 0).toFixed(2).replace(".", ",")}</td><td><strong>${Number(p.estoque_quantidade || 0)} un.</strong></td><td>${Number(p.estoque_minimo || 0)} un.</td><td><span class="stock-badge ${st.classe}">${st.texto}</span></td><td><div class="stock-actions"><button class="stock-in" onclick="movimentarEstoque(${p.id}, 'entrada')">＋ Repor</button><button class="stock-out" onclick="movimentarEstoque(${p.id}, 'saida')">− Ajustar</button><button class="edit-button" onclick="editarItemEstoque(${p.id})">Editar</button></div></td></tr>`;
+  }).join("");
+}
+
+function abrirModalEstoque() {
+  produtoEstoqueEditando = null;
+  const select = document.getElementById("estoqueProduto");
+  const cadastrados = itensEstoque.filter(p => p.estoque_quantidade === null || p.estoque_quantidade === undefined);
+  select.innerHTML = '<option value="">Selecione um geladinho</option>' + cadastrados.map(p => `<option value="${p.id}">${String(p.nome).replace(/[&<>"']/g, "")}</option>`).join("");
+  if (!cadastrados.length) {
+    select.innerHTML = '<option value="">Todos os sabores já possuem estoque configurado</option>';
+  }
+  document.getElementById("estoqueQuantidade").value = "";
+  document.getElementById("estoqueMinimo").value = "0";
+  document.getElementById("tituloModalEstoque").textContent = "Definir estoque do geladinho";
+  document.getElementById("modalEstoque").classList.add("show");
+}
+
+function editarItemEstoque(id) {
+  const produto = itensEstoque.find(p => Number(p.id) === Number(id));
+  if (!produto) return;
+  produtoEstoqueEditando = produto;
+  document.getElementById("estoqueProduto").innerHTML = `<option value="${produto.id}">${produto.nome}</option>`;
+  document.getElementById("estoqueQuantidade").value = produto.estoque_quantidade ?? 0;
+  document.getElementById("estoqueMinimo").value = produto.estoque_minimo ?? 0;
+  document.getElementById("tituloModalEstoque").textContent = "Editar estoque — " + produto.nome;
+  document.getElementById("modalEstoque").classList.add("show");
+}
+
+function fecharModalEstoque() {
+  document.getElementById("modalEstoque").classList.remove("show");
+  produtoEstoqueEditando = null;
+}
+
+async function salvarItemEstoque() {
+  const id = Number(document.getElementById("estoqueProduto").value);
+  const quantidade = Number(document.getElementById("estoqueQuantidade").value);
+  const minimo = Number(document.getElementById("estoqueMinimo").value || 0);
+  const produto = produtoEstoqueEditando || itensEstoque.find(p => Number(p.id) === id);
+  if (!produto) return alert("Selecione um geladinho.");
+  if (!Number.isInteger(quantidade) || quantidade < 0 || !Number.isInteger(minimo) || minimo < 0) return alert("Informe quantidades inteiras iguais ou maiores que zero.");
+  const anterior = Number(produto.estoque_quantidade || 0);
+  const { error } = await supabaseClient.from("produtos").update({ estoque_quantidade: quantidade, estoque_minimo: minimo }).eq("id", produto.id);
+  if (error) return alert("Não foi possível salvar: " + error.message);
+  if (produtoEstoqueEditando && anterior !== quantidade) {
+    const tipo = quantidade > anterior ? "entrada" : "saida";
+    await supabaseClient.from("estoque_movimentacoes").insert({ produto_id: produto.id, tipo, quantidade: Math.abs(quantidade - anterior), observacao: "Ajuste manual no painel administrativo" });
+  } else if (!produtoEstoqueEditando && quantidade > 0) {
+    await supabaseClient.from("estoque_movimentacoes").insert({ produto_id: produto.id, tipo: "entrada", quantidade, observacao: "Estoque inicial" });
+  }
+  fecharModalEstoque();
+  await carregarEstoque();
+  await carregarProdutos();
+}
+
+async function movimentarEstoque(id, tipo) {
+  const produto = itensEstoque.find(p => Number(p.id) === Number(id));
+  if (!produto) return;
+  const acao = tipo === "entrada" ? "reposição" : "ajuste de saída";
+  const valor = prompt(`Quantidade para ${acao} de ${produto.nome}:`);
+  if (valor === null) return;
+  const quantidade = Number(valor.trim());
+  if (!Number.isInteger(quantidade) || quantidade <= 0) return alert("Informe uma quantidade inteira maior que zero.");
+  const atual = Number(produto.estoque_quantidade || 0);
+  if (tipo === "saida" && quantidade > atual) return alert(`Estoque insuficiente. Disponível: ${atual} unidades.`);
+  const nova = atual + (tipo === "entrada" ? quantidade : -quantidade);
+  const { error } = await supabaseClient.from("produtos").update({ estoque_quantidade: nova }).eq("id", id);
+  if (error) return alert("Não foi possível atualizar: " + error.message);
+  const { error: movError } = await supabaseClient.from("estoque_movimentacoes").insert({ produto_id: id, tipo, quantidade, observacao: tipo === "entrada" ? "Reposição manual" : "Ajuste manual de saída" });
+  if (movError) console.error("Erro ao registrar histórico:", movError);
+  await carregarEstoque();
+  await carregarProdutos();
+}
+
+async function carregarHistoricoEstoque() {
+  const corpo = document.getElementById("estoqueHistorico");
+  if (!corpo) return;
+  const { data, error } = await supabaseClient.from("estoque_movimentacoes").select("id,tipo,quantidade,observacao,created_at,produtos(nome)").order("created_at", { ascending: false }).limit(15);
+  if (error || !data?.length) {
+    corpo.innerHTML = '<tr><td colspan="5" class="inventory-empty">Nenhuma movimentação registrada ainda.</td></tr>';
+    return;
+  }
+  corpo.innerHTML = data.map(m => `<tr><td>${new Date(m.created_at).toLocaleString("pt-BR")}</td><td>${String(m.produtos?.nome || "Geladinho").replace(/[&<>"']/g, "")}</td><td><span class="stock-badge ${m.tipo === "entrada" ? "stock-ok" : "stock-out-label"}">${m.tipo === "entrada" ? "Entrada / reposição" : "Saída / venda"}</span></td><td>${Number(m.quantidade)} un.</td><td>${String(m.observacao || "—").replace(/[&<>"']/g, "")}</td></tr>`).join("");
+}
+
+// =========================
 // INICIAR PAINEL
 // =========================
 
@@ -885,5 +1028,6 @@ verificarLogin().then((logado) => {
     carregarLoja();
     carregarProdutos();
     carregarAdicionais();
+    carregarEstoque();
   }
 });
