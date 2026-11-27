@@ -87,7 +87,7 @@ html body :where(a, button, summary, label.option-card, .cat-tab) { -webkit-tap-
   html body .cart-bar { left: 12px; right: 12px; padding: 12px 16px; bottom: calc(12px + env(safe-area-inset-bottom, 0px)); }
   html body main { padding-bottom: 84px; }
 
-  html body .toast { left: 12px; right: 12px; max-width: none; bottom: calc(80px + env(safe-area-inset-bottom, 0px)); }
+  html body .toast { max-width: 92vw; padding: 11px 18px; font-size: .88rem; }
 
   /* dúvidas e rodapé */
   html body .faq-list summary { padding: 14px 4px; min-height: 48px; }
